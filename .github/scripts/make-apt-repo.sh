@@ -129,6 +129,9 @@ sed -e "s/@VERSION@/${VERSION}/g" \
     -e "s|@PAGES_BASE_URL@|${PAGES_BASE_URL}|g" \
     "$REPO_ROOT/pages/index.html" > "$SITE/index.html"
 install -m 0755 "$REPO_ROOT/pages/install.sh" "$SITE/install.sh"
+# Publish the modular landing-page assets alongside the flat APT repository.
+install -d "$SITE/assets"
+cp -R "$REPO_ROOT/pages/assets/." "$SITE/assets/"
 
 # --- summary for the CI log ---
 log "repository contents:"
@@ -141,6 +144,8 @@ test -s "$SITE/Packages"        || { echo "error: Packages is empty" >&2; exit 1
 test -s "$SITE/InRelease"       || { echo "error: InRelease is missing" >&2; exit 1; }
 test -s "$SITE/Release.gpg"     || { echo "error: Release.gpg is missing" >&2; exit 1; }
 test -s "$SITE/public.key"      || { echo "error: public.key is missing" >&2; exit 1; }
+test -s "$SITE/assets/site.css" || { echo "error: site stylesheet is missing" >&2; exit 1; }
+test -s "$SITE/assets/site.js"  || { echo "error: site script is missing" >&2; exit 1; }
 test -s "$SITE/easycaddy-archive-keyring.gpg" || { echo "error: keyring is missing" >&2; exit 1; }
 
 if ! grep -q "^Filename: pool/.*\.deb$" "$SITE/Packages"; then
