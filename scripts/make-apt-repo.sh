@@ -32,7 +32,7 @@ gh release download "$TAG" --repo "$REPO" --pattern '*.deb' --dir "$SITE/pool" -
 mapfile -t older < <(
   gh release list --repo "$REPO" --limit 50 --json tagName --jq '.[].tagName' \
     | grep -E '^v[0-9]+\.[0-9]+\.[0-9]+$' \
-    | grep -vx "$TAG" \
+    | grep -Fvx "$TAG" \
     | head -n "$((KEEP - 1))" || true
 )
 if [ "${#older[@]}" -gt 0 ]; then

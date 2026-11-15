@@ -1,0 +1,6 @@
+# actionlint 1.7.12 ships an older runner-label list and does not know the
+# (GA) ubuntu-26.04 hosted runner label yet. Declaring it here keeps
+# `actionlint` usable without masking real workflow problems.
+self-hosted-runner:
+  labels:
+    - ubuntu-26.04

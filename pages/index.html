@@ -99,14 +99,14 @@ sudo chmod o+r /usr/share/keyrings/easycaddy-archive-keyring.gpg
 sudo chmod o+r /etc/apt/sources.list.d/easycaddy.list
 sudo apt update
 sudo apt install caddy</code></pre>
-    <p class="muted">包版本形如 <code>@VERSION@-1+easycaddy</code>，排序高于官方同版本包，因此会替换官方安装而不冲突。</p>
+    <p class="muted">包名与版本和官方完全一致（<code>caddy @VERSION@</code>）。脚本会停用官方源并写入 apt pin，再用 <code>--reinstall</code> 确保替换为带插件的构建。</p>
   </section>
 
   <section class="card">
     <h2>升级 / 降级</h2>
     <pre><code>sudo apt update &amp;&amp; sudo apt install --only-upgrade caddy
 apt-cache policy caddy
-sudo apt install caddy=@VERSION@-1+easycaddy</code></pre>
+sudo apt install --reinstall caddy=@VERSION@</code></pre>
     <p class="muted">站点保留最近 3 个版本；更早版本可在 <a href="https://github.com/MinimaxFlora/EasyCaddy/releases">GitHub Releases</a> 下载 .deb。</p>
   </section>
 

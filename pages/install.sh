@@ -46,7 +46,14 @@ log "updating package index"
 apt-get update -qq
 
 log "installing caddy"
-DEBIAN_FRONTEND=noninteractive apt-get install -y caddy
+# Our package intentionally uses the same version as upstream. If an official
+# caddy of the same version is already installed, a plain install is a no-op,
+# so force a reinstall from this repository.
+if dpkg -s caddy >/dev/null 2>&1; then
+  DEBIAN_FRONTEND=noninteractive apt-get install -y --reinstall caddy
+else
+  DEBIAN_FRONTEND=noninteractive apt-get install -y caddy
+fi
 
 log "Caddy installed:"
 caddy version
