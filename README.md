@@ -132,6 +132,18 @@ gpg --armor --export easycaddy@users.noreply.github.com > public.key
 
 **更换 Pages 地址**：同时修改 `env.PAGES_BASE_URL` 与 `pages/install.sh` 里的默认 `BASE_URL`，再修改 `pages/index.html` 中的链接（脚本会用 `@PAGES_BASE_URL@` 替换）。
 
+## 质量检查（QC）
+
+重打包阶段会主动应用 Debian Policy 修复，而不是原样转包上游 deb：
+
+- systemd unit 从 `/lib/systemd/system` 移到 `/usr/lib/systemd/system`
+- bash completion 从已废弃的 `/etc/bash_completion.d` 移到 `/usr/share/bash-completion/completions`
+- 补全 `copyright`、`changelog.gz`、`Extended Description`
+- man page 用 `gzip -9n` 重新压缩，去掉时间戳
+- 去掉 maintainer script 里的 `chown -R`，并补充 lintian overrides（Go 静态二进制等）
+
+在 Debian 13 + lintian 2.122.0 上对 `amd64` 包的结果为 **0 error / 0 warning**。workflow 会在 amd64 构建后额外跑一次 lintian（advisory，不阻塞发布，报告随 artifact 上传为 `lintian.txt`）。
+
 ## 说明与限制
 
 - 这是非官方构建，不提供任何担保；生产环境请先在测试机验证。
