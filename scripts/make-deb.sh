@@ -189,7 +189,9 @@ fi
   find . -type f ! -path './DEBIAN/*' -printf '%P\n' | LC_ALL=C sort | xargs -r md5sum > DEBIAN/md5sums
 )
 
-OUT_DEB="$OUT_DIR/caddy_${VERSION}_${DEB_ARCH}.deb"
+# Use the upstream asset suffix in the filename. armv6 and armv7 both report
+# Architecture: armhf, so naming by $ASSET keeps the two files distinct.
+OUT_DEB="$OUT_DIR/caddy_${VERSION}_${ASSET}.deb"
 dpkg-deb --build --root-owner-group "$ROOT" "$OUT_DEB" >/dev/null
 
 log "built $OUT_DEB"

@@ -49,6 +49,14 @@ find "$SITE/pool" -type f -name '*.deb' -printf '%f\n' | sort | uniq -d | while 
   log "warning: duplicate package filename $dup"
 done
 
+# Debian's armhf architecture cannot distinguish ARMv6 from ARMv7. Both upstream
+# .deb files declare Architecture: armhf, so they cannot coexist in one package
+# index. Keep the ARMv7 build in APT (the common case) and leave the ARMv6 build
+# as a GitHub Release download.
+find "$SITE/pool" -type f -name '*_linux_armv6.deb' -print -delete | while read -r f; do
+  log "excluded from APT index (available in Releases): $(basename "$f")"
+done
+
 # --- generate Packages ---
 log "generating Packages"
 (

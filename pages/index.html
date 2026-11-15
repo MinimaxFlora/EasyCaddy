@@ -129,7 +129,8 @@ sudo apt install --reinstall caddy=@VERSION@</code></pre>
 
   <section class="card">
     <h2>架构</h2>
-    <p>amd64 · arm64 · armv7 · armv6 · armv5 · ppc64le · riscv64 · s390x</p>
+    <p>APT 索引：amd64 · arm64 · armv7 · armv5 · ppc64le · riscv64 · s390x</p>
+    <p class="muted">armv6 的 .deb 也在构建，但 Debian 的 <code>armhf</code> 架构名无法与 armv7 区分，因此只放在 GitHub Release 供手动下载。</p>
     <p class="warn">官方 Caddy APT 源与本仓库使用同一个包名 <code>caddy</code>。请只保留一个源，或确认 <code>apt-cache policy caddy</code> 选中的是本仓库版本；否则上游更新时可能把带插件的构建覆盖掉。</p>
   </section>
 

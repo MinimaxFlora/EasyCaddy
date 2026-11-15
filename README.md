@@ -5,6 +5,7 @@
 - 自动跟随上游最新 release tag（每周一 UTC 03:00 检查，也可手动触发）
 - 本仓库的 tag / release 与上游同名，例如 `v2.11.9`
 - 8 个 Linux 架构：`amd64` `arm64` `armv7` `armv6` `armv5` `ppc64le` `riscv64` `s390x`
+- APT 索引覆盖除 `armv6` 外的 7 个架构；`armv6` 的 deb 仍会构建并放在 Release（Debian 的 `armhf` 无法区分 ARMv6/ARMv7，两者不能共存于同一索引）
 - 包名和版本都与官方一致（例如 `caddy 2.11.9`），安装时通过 apt pin 和 `--reinstall` 强制选中本仓库的构建
 - APT 索引用 GPG 签名，安装方式与官方源一致
 

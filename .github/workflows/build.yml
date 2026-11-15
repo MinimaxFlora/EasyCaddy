@@ -151,9 +151,10 @@ jobs:
           export CGO_ENABLED=0
 
           echo "Building Caddy $TAG for GOOS=$GOOS GOARCH=$GOARCH GOARM=${GOARM:-<none>}"
+          # xcaddy already applies -trimpath and -ldflags "-s -w"; it has no
+          # --ldflags flag (v0.4.7).
           xcaddy build "$TAG" \
             --output dist/caddy \
-            --ldflags "-s -w" \
             "${args[@]}"
 
           file dist/caddy
@@ -249,6 +250,10 @@ jobs:
             echo "- \`.deb\` for amd64, arm64, armv7, armv6, armv5, ppc64le, riscv64, s390x"
             echo "- \`.tar.gz\` binaries for the same platforms"
             echo "- \`checksums.txt\` (SHA-256)"
+            echo
+            echo "> The ARMv6 \`.deb\` is only distributed here. It is not part of the APT"
+            echo "> repository because upstream labels both ARMv6 and ARMv7 packages as"
+            echo "> Debian architecture \`armhf\`, so they cannot share one package index."
             echo
             echo "> This is an unofficial build. Plugin versions are not pinned and are resolved at build time."
           } > release-notes.md
