@@ -1,107 +1,173 @@
 # EasyCaddy
 
-用 xcaddy 编译带常用插件的 [Caddy](https://github.com/caddyserver/caddy)，产出 deb 包，并通过 GitHub Pages 提供可直接 `apt install` 的签名 APT 仓库。
+[English](README.md) | [简体中文](README_ZH.md) | [日本語](README_JA.md) | [한국어](README_KR.md)
 
-- 自动跟随上游最新 release tag（每周一 UTC 03:00 检查，也可手动触发）
-- 本仓库的 tag / release 与上游同名，例如 `v2.11.9`
-- 8 个 Linux 架构：`amd64` `arm64` `armv7` `armv6` `armv5` `ppc64le` `riscv64` `s390x`
-- APT 索引覆盖除 `armv6` 外的 7 个架构；`armv6` 的 deb 仍会构建并放在 Release（Debian 的 `armhf` 无法区分 ARMv6/ARMv7，两者不能共存于同一索引）
-- 包名和版本都与官方一致（例如 `caddy 2.11.9`），安装时通过 apt pin 和 `--reinstall` 强制选中本仓库的构建
-- APT 索引用 GPG 签名，安装方式与官方源一致
+[![Build Caddy with plugins](https://github.com/MinimaxFlora/EasyCaddy/actions/workflows/build.yml/badge.svg?branch=master)](https://github.com/MinimaxFlora/EasyCaddy/actions/workflows/build.yml)
+[![Latest release](https://img.shields.io/github/v/release/MinimaxFlora/EasyCaddy)](https://github.com/MinimaxFlora/EasyCaddy/releases/latest)
 
-## 安装
+Unofficial [Caddy](https://github.com/caddyserver/caddy) builds with a curated set of
+third-party modules, packaged as `.deb` files and published as a signed APT repository
+at **https://caddy.tatalvpai.vip**.
 
-一条命令：
+- Tracks the latest upstream Caddy release (checked every Monday at 03:00 UTC, or manually)
+- Release tags mirror upstream exactly, for example `v2.11.9`
+- Builds 8 Linux architectures; the APT index covers 7 of them
+- Package name and version match upstream (`caddy 2.11.9`), selected with an APT pin
+  and `--reinstall`
+- The APT index is signed with a dedicated GPG key
+
+## Install
+
+One command:
 
 ```bash
-curl -fsSL https://minimaxflora.github.io/EasyCaddy/install.sh | sudo bash
+curl -fsSL https://caddy.tatalvpai.vip/install.sh | sudo bash
 ```
 
-或者手动：
+Or set up the repository manually:
 
 ```bash
 sudo apt install -y debian-keyring debian-archive-keyring apt-transport-https curl
-curl -1sLf 'https://minimaxflora.github.io/EasyCaddy/public.key' \
+curl -1sLf 'https://caddy.tatalvpai.vip/public.key' \
   | sudo gpg --dearmor -o /usr/share/keyrings/easycaddy-archive-keyring.gpg
-echo "deb [signed-by=/usr/share/keyrings/easycaddy-archive-keyring.gpg] https://minimaxflora.github.io/EasyCaddy/ ./" \
+echo "deb [signed-by=/usr/share/keyrings/easycaddy-archive-keyring.gpg] https://caddy.tatalvpai.vip/ ./" \
   | sudo tee /etc/apt/sources.list.d/easycaddy.list
+printf 'Package: caddy\nPin: origin "caddy.tatalvpai.vip"\nPin-Priority: 1001\n' \
+  | sudo tee /etc/apt/preferences.d/easycaddy
 sudo chmod o+r /usr/share/keyrings/easycaddy-archive-keyring.gpg
 sudo chmod o+r /etc/apt/sources.list.d/easycaddy.list
-printf 'Package: caddy\nPin: origin "minimaxflora.github.io"\nPin-Priority: 1001\n' \
-  | sudo tee /etc/apt/preferences.d/easycaddy
 sudo apt update
 sudo apt install --reinstall caddy
 ```
 
-因为本仓库的版本号和官方完全相同，如果机器上已经装了官方同版本 `caddy`，`apt install caddy` 会认为“已是最新”而不做任何事；`--reinstall` 才会真正换成带插件的构建。首次安装时也可以直接用 `--reinstall`，apt 会正常安装。
+Because the version is identical to upstream, a plain `apt install caddy` does nothing
+when an official package of the same version is already installed. `--reinstall` forces
+the package from this repository to be unpacked. The APT pin keeps this repository
+selected if the official Caddy source is enabled again.
 
-验证：
+Verify the installation:
 
 ```bash
 caddy version
-caddy list-modules | grep -E 'dns.providers|ratelimit|security|layer4|dynamic_dns|webdav|cache|geoip2|cloudflare'
+caddy list-modules | grep -E 'dns.providers|rate_limit|security|layer4|dynamic_dns|webdav|cache|geoip2|cloudflare'
 ```
 
-> **不要同时启用官方 Caddy 源。** 两者包名、版本号都相同，apt 无法靠版本区分。`install.sh` 会自动把 `/etc/apt/sources.list.d/caddy-stable.list` 改名为 `.disabled-by-easycaddy`，并写入 `/etc/apt/preferences.d/easycaddy`，用 origin pin 把本仓库固定为优先来源；手动安装的用户也应添加同样的 pin（见上）。
+> **Do not enable the official Caddy APT repository at the same time.** Both sources ship
+> a package named `caddy` with the same version. `install.sh` renames
+> `/etc/apt/sources.list.d/caddy-stable.list` to `.disabled-by-easycaddy` and writes the pin
+> shown above. If you use the manual setup, add the pin yourself.
 >
-> 另外不要运行 `caddy upgrade`：它会从官方下载不带插件的二进制并覆盖当前文件。请用 `apt install --only-upgrade caddy` 升级。
->
-> 如果上游发布了新版本（例如 `2.12.0`），而本仓库还没跟进，apt 会认为官方版本更新并升级过去，插件会丢失。发生这种情况时请先等本仓库的自动构建完成，或手动触发一次。
+> Do not run `caddy upgrade`: it downloads the official binary and overwrites this build,
+> removing the extra modules. Upgrade with `sudo apt install --only-upgrade caddy`.
 
-## 插件
+### Upgrades and downgrades
 
-| 模块 | 用途 |
+```bash
+sudo apt update
+sudo apt install --only-upgrade caddy
+apt-cache policy caddy
+```
+
+The Pages site keeps the three most recent releases. Older `.deb` files remain available
+from the corresponding GitHub Release.
+
+## Plugins
+
+| Module | Purpose |
 | --- | --- |
-| `github.com/caddy-dns/cloudflare` | Cloudflare DNS-01 |
-| `github.com/caddy-dns/alidns` | 阿里云 DNS-01 |
-| `github.com/caddy-dns/tencentcloud` | 腾讯云 DNSPod DNS-01 |
-| `github.com/mholt/caddy-ratelimit` | `rate_limit` 限流 |
-| `github.com/greenpau/caddy-security` | 认证 / 授权 / MFA / OAuth 门户 |
-| `github.com/mholt/caddy-l4` | 四层 TCP/UDP 代理 |
-| `github.com/mholt/caddy-dynamicdns` | 动态 DNS |
-| `github.com/mholt/caddy-webdav` | WebDAV |
-| `github.com/caddyserver/cache-handler` | HTTP 缓存 |
-| `github.com/zhangjiayin/caddy-geoip2` | GeoIP2 匹配器 |
-| `github.com/WeidiDeng/caddy-cloudflare-ip` | 恢复 Cloudflare 后真实客户端 IP |
+| `github.com/caddy-dns/cloudflare` | Cloudflare DNS-01 challenge |
+| `github.com/caddy-dns/alidns` | Alibaba Cloud DNS-01 challenge |
+| `github.com/caddy-dns/tencentcloud` | Tencent Cloud DNSPod DNS-01 challenge |
+| `github.com/mholt/caddy-ratelimit` | `rate_limit` request limiting |
+| `github.com/greenpau/caddy-security` | Authentication, authorization, MFA and OAuth portal |
+| `github.com/mholt/caddy-l4` | Layer 4 TCP/UDP proxying |
+| `github.com/mholt/caddy-dynamicdns` | Dynamic DNS updates |
+| `github.com/mholt/caddy-webdav` | WebDAV file serving |
+| `github.com/caddyserver/cache-handler` | HTTP caching |
+| `github.com/zhangjiayin/caddy-geoip2` | GeoIP2 matchers |
+| `github.com/WeidiDeng/caddy-cloudflare-ip` | Restore real client IPs behind Cloudflare |
 
-插件版本**没有固定**，每次构建都解析各仓库默认分支的最新版本（与 `--with github.com/caddy-dns/cloudflare` 的默认行为一致）。如果你希望构建可复现，可以在 `.github/workflows/build.yml` 的 `PLUGINS` 里写成 `github.com/...@v1.2.3` 或 `@<commit>`。
+Plugin versions are **not pinned**. Every build resolves the default branch of each
+repository, matching the behaviour of `--with github.com/caddy-dns/cloudflare`. To make
+builds reproducible, append `@v1.2.3` or `@<commit>` in the `PLUGINS` block of
+`.github/workflows/build.yml`.
 
-## 仓库结构
+## Architectures
 
+Builds and Release assets: `amd64`, `arm64`, `armv7`, `armv6`, `armv5`, `ppc64le`,
+`riscv64`, `s390x`.
+
+The APT index includes every architecture except `armv6`. Upstream labels both ARMv6 and
+ARMv7 packages as Debian architecture `armhf`, and two packages with the same name,
+version and architecture cannot coexist in one package index. The ARMv7 build is served
+through APT; the ARMv6 `.deb` and `.tar.gz` are available from the GitHub Release.
+
+## How it works
+
+1. `.github/workflows/build.yml` resolves the latest upstream release tag (or a tag
+   supplied through `workflow_dispatch`).
+2. A matrix job runs `xcaddy build` for all eight Linux architectures with the plugin
+   list from the workflow `PLUGINS` environment variable.
+3. `.github/scripts/make-deb.sh` downloads the matching official Caddy `.deb`, replaces
+   `/usr/bin/caddy` with the custom binary, applies Debian Policy fixes, regenerates
+   checksums and repacks the package.
+4. The release job publishes a GitHub Release with `.deb`, `.tar.gz` and SHA-256
+   checksums.
+5. `.github/scripts/make-apt-repo.sh` downloads the current and two previous releases,
+   generates `Packages` / `Packages.gz`, signs `Release` and `InRelease` with the
+   repository key, and deploys the site to GitHub Pages.
+
+## Repository layout
+
+```text
+.github/workflows/build.yml        Build, release and Pages deployment
+.github/scripts/make-deb.sh        Repack the upstream .deb with the custom binary
+.github/scripts/make-apt-repo.sh   Collect packages, build indexes and sign them
+.github/ISSUE_TEMPLATE/            Issue forms
+.github/CODEOWNERS                 Review ownership
+.github/FUNDING.yml                Sponsorship links
+.github/PULL_REQUEST_TEMPLATE.md   Pull request checklist
+.github/dependabot.yml             Weekly GitHub Actions updates
+.github/actionlint.yaml            actionlint configuration
+pages/index.html                   APT repository landing page
+pages/install.sh                   User installer
+public.key                         APT repository signing public key
+README.md / README_ZH.md / README_JA.md / README_KR.md
+CONTRIBUTING.md                    Contribution guide
+CHANGELOG.md                       Release history
 ```
-.github/workflows/build.yml   # 检测上游版本 → 8 架构构建 → 发布 Release → 部署 Pages
-scripts/make-deb.sh           # 以上游官方 deb 为模板替换二进制并重打包
-scripts/make-apt-repo.sh      # 收集最近 3 个版本的 deb、生成索引、GPG 签名
-pages/index.html              # APT 仓库首页
-pages/install.sh              # 用户安装脚本
-public.key                    # APT 仓库签名公钥（私钥只放在 Actions secret）
-```
 
-`make-deb.sh` 直接下载上游对应版本的官方 `.deb`，解包后替换 `/usr/bin/caddy`，保留官方的 systemd 单元、`caddy` 用户创建脚本、`/etc/caddy/Caddyfile`、man page 与 bash completion，再重新计算 md5sums 和 Installed-Size 后打包。这样新包的行为与官方安装完全一致。
+## Repository maintenance
 
-## 首次部署（仓库维护者）
+The signing public key is committed as `public.key`:
 
-仓库根目录的 `public.key` 是当前的仓库签名公钥：
-
-```
+```text
 5D07 1390 261F C2DE BE57  7C7B 129D C816 26FF 07EE
 EasyCaddy Repository <easycaddy@users.noreply.github.com>
 ```
 
-1. 在仓库 **Settings → Secrets and variables → Actions** 新建 secret：
-   - `GPG_PRIVATE_KEY`：签名私钥的完整内容（含 `BEGIN PGP PRIVATE KEY BLOCK` / `END` 行），无 passphrase
+1. Add the private key as the `GPG_PRIVATE_KEY` Actions secret. The key has no
+   passphrase; keep an offline backup and never commit it.
+2. In **Settings → Pages → Build and deployment**, choose **GitHub Actions** as the
+   source and set the custom domain to `caddy.tatalvpai.vip`.
+3. Create a DNS `CNAME` record for `caddy.tatalvpai.vip` pointing to
+   `minimaxflora.github.io`. Use DNS-only mode (grey cloud) while GitHub provisions the
+   TLS certificate; proxying can be enabled afterwards.
+4. Run **Actions → Build Caddy with plugins → Run workflow** once.
 
-   私钥不提交到仓库；请离线备份。丢失后已发布版本仍可安装，但无法继续发布新的索引。
+Manual controls:
 
-2. 在 **Settings → Pages → Build and deployment → Source** 选择 **GitHub Actions**。
+- **Build a specific version:** set `upstream_version` to a tag such as `v2.11.9`.
+- **Rebuild an existing release:** enable `force`; release assets are overwritten and
+  the index is regenerated.
+- **Add a plugin:** add one module path per line to `PLUGINS`; do not add modules that are
+  already part of the standard Caddy build.
+- **Change the package retention:** edit `KEEP_VERSIONS` (default `3`). GitHub Pages has
+  a 1 GB soft limit; seven packages per version are roughly 140 MB.
+- **Change the public URL:** update `PAGES_BASE_URL` in the workflow, `BASE_URL` and the
+  pin origin in `pages/install.sh`, the Pages custom domain, and the links in the READMEs.
 
-3. 触发一次构建：**Actions → Build Caddy with plugins → Run workflow**。留空版本号即构建上游最新版。
-
-4. 构建完成后访问 `https://minimaxflora.github.io/EasyCaddy/`，确认首页版本号正确。
-
-### 轮换签名密钥
-
-只有需要轮换时才执行：
+### Rotating the signing key
 
 ```bash
 gpg --batch --gen-key <<'EOF'
@@ -118,37 +184,49 @@ gpg --armor --export-secret-keys easycaddy@users.noreply.github.com > easycaddy-
 gpg --armor --export easycaddy@users.noreply.github.com > public.key
 ```
 
-更新 `GPG_PRIVATE_KEY` secret、提交新的 `public.key`，然后重新触发一次构建。`make-apt-repo.sh` 每次都会从 CI keyring 重新导出 `public.key` 到 Pages，因此站点会自动使用新密钥；旧密钥安装过的机器需要重新 dearmor 公钥并清理 apt 的 keyring。
+Update the `GPG_PRIVATE_KEY` secret and commit the new `public.key`, then run the
+workflow again. Existing installations must download the new key and update their
+`signed-by` keyring.
 
-## 日常维护
+## Quality checks
 
-**手动构建指定版本**：Actions → Run workflow，在 `upstream_version` 填 `v2.11.9`。
+The packaging step applies Debian Policy fixes instead of blindly repacking upstream:
 
-**强制重建已存在的 release**：勾选 `force`。会覆盖 Release 资产并重新生成索引。
+- systemd units move from `/lib/systemd/system` to `/usr/lib/systemd/system`
+- bash completion moves from the obsolete `/etc/bash_completion.d` to
+  `/usr/share/bash-completion/completions`
+- `copyright`, `changelog.gz` and an extended description are added
+- man pages are recompressed with `gzip -9n`
+- `chown -R` in the maintainer script is replaced with a directory-only `chown`
+- lintian overrides cover properties inherent to Go static binaries
 
-**新增插件**：编辑 `.github/workflows/build.yml` 顶部的 `PLUGINS`，每行一个模块，然后手动触发一次构建。注意不要加入 Caddy 标准构建里已有的模块，重复注册会导致启动 panic。
+On Debian 13 with lintian 2.122.0 the amd64 package reports **0 errors and 0 warnings**.
+CI also runs lintian on the amd64 build as an advisory step (`lintian.txt` is uploaded
+with the build artifact). `actionlint`, YAML parsing and `bash -n` are part of the
+development checks described in [CONTRIBUTING.md](CONTRIBUTING.md).
 
-**调整保留版本数**：修改 `env.KEEP_VERSIONS`。GitHub Pages 站点有 1GB 软上限，8 架构 × 每架构约 20–30MB，保留 3 个版本约 500–700MB，不建议调大。
+## Limitations
 
-**更换 Pages 地址**：同时修改 `env.PAGES_BASE_URL` 与 `pages/install.sh` 里的默认 `BASE_URL`，再修改 `pages/index.html` 中的链接（脚本会用 `@PAGES_BASE_URL@` 替换）。
+- This is an unofficial build and comes with no warranty. Validate it in a test
+  environment before using it in production.
+- Plugin versions are resolved at build time and are not reproducible by default.
+- `caddy-geoip2` requires a MaxMind GeoLite2 or GeoIP2 database supplied by the user.
+- `greenpau/caddy-security` significantly increases binary size and build time.
+- The scheduled workflow only builds when upstream publishes a **new** release tag; an
+  existing release with the same tag is skipped unless `force` is enabled.
+- The release tag points to a commit in this packaging repository, not to an upstream
+  commit. xcaddy fetches the upstream source by tag.
+- If upstream stops publishing an official `.deb` for an architecture, the build fails
+  with an explicit error; the packaging script would then need a self-contained template.
 
-## 质量检查（QC）
+## Contributing
 
-重打包阶段会主动应用 Debian Policy 修复，而不是原样转包上游 deb：
+Bug reports, plugin requests and pull requests are welcome. See
+[CONTRIBUTING.md](CONTRIBUTING.md), the issue templates, and
+[CHANGELOG.md](CHANGELOG.md).
 
-- systemd unit 从 `/lib/systemd/system` 移到 `/usr/lib/systemd/system`
-- bash completion 从已废弃的 `/etc/bash_completion.d` 移到 `/usr/share/bash-completion/completions`
-- 补全 `copyright`、`changelog.gz`、`Extended Description`
-- man page 用 `gzip -9n` 重新压缩，去掉时间戳
-- 去掉 maintainer script 里的 `chown -R`，并补充 lintian overrides（Go 静态二进制等）
-
-在 Debian 13 + lintian 2.122.0 上对 `amd64` 包的结果为 **0 error / 0 warning**。workflow 会在 amd64 构建后额外跑一次 lintian（advisory，不阻塞发布，报告随 artifact 上传为 `lintian.txt`）。
-
-## 说明与限制
-
-- 这是非官方构建，不提供任何担保；生产环境请先在测试机验证。
-- `caddy-geoip2` 需要自行提供 MaxMind GeoLite2/GeoIP2 数据库文件。
-- `caddy-security` 体积较大，会明显拉长构建时间。
-- 定时任务只在**上游出现新 release tag** 时构建；已存在同名 release 时自动跳过。
-- Release 的 tag 指向本打包仓库的提交，不是上游提交；上游源码由 xcaddy 按 tag 拉取。
-- 上游若停止为某个架构提供官方 `.deb`，该架构的构建会失败并给出明确错误；届时需要改为自建 deb 模板。
+- Repository: https://github.com/MinimaxFlora/EasyCaddy
+- Releases: https://github.com/MinimaxFlora/EasyCaddy/releases
+- APT repository: https://caddy.tatalvpai.vip
+- Upstream Caddy: https://github.com/caddyserver/caddy
+- Caddy documentation: https://caddyserver.com/docs/

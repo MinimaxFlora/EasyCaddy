@@ -1,12 +1,12 @@
 #!/usr/bin/env bash
 # EasyCaddy installer: adds the signed APT repository and installs Caddy.
 #
-#   curl -fsSL https://minimaxflora.github.io/EasyCaddy/install.sh | sudo bash
+#   curl -fsSL https://caddy.tatalvpai.vip/install.sh | sudo bash
 #
 # The script is idempotent and safe to re-run for upgrades.
 set -euo pipefail
 
-BASE_URL="${EASYCADDY_BASE_URL:-https://minimaxflora.github.io/EasyCaddy}"
+BASE_URL="${EASYCADDY_BASE_URL:-https://caddy.tatalvpai.vip}"
 KEYRING="/usr/share/keyrings/easycaddy-archive-keyring.gpg"
 LIST="/etc/apt/sources.list.d/easycaddy.list"
 
@@ -38,7 +38,7 @@ for f in /etc/apt/sources.list.d/caddy-stable.list /etc/apt/sources.list.d/caddy
 done
 
 # Keep this build selected even if an official Caddy source is re-added later.
-printf 'Package: caddy\nPin: origin "minimaxflora.github.io"\nPin-Priority: 1001\n' \
+printf 'Package: caddy\nPin: origin "caddy.tatalvpai.vip"\nPin-Priority: 1001\n' \
   > /etc/apt/preferences.d/easycaddy
 chmod 0644 /etc/apt/preferences.d/easycaddy
 

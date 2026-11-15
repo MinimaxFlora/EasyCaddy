@@ -1,0 +1,11 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Caddy documentation
+    url: https://caddyserver.com/docs/
+    about: Configuration syntax, module documentation and tutorials for Caddy itself.
+  - name: Upstream Caddy bug tracker
+    url: https://github.com/caddyserver/caddy/issues
+    about: Report bugs that also occur with an official Caddy build upstream.
+  - name: Plugin repositories
+    url: https://github.com/caddyserver/caddy/wiki/Plugins
+    about: Find the upstream repository for a third-party plugin.

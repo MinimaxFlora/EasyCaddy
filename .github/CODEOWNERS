@@ -1,0 +1,11 @@
+# Default owner for every path in this repository.
+* @MinimaxFlora
+
+# Build, packaging and release automation.
+/.github/ @MinimaxFlora
+/.github/scripts/ @MinimaxFlora
+/.github/workflows/ @MinimaxFlora
+
+# Static APT repository content and installer.
+/pages/ @MinimaxFlora
+/public.key @MinimaxFlora

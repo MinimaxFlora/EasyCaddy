@@ -1,0 +1,50 @@
+name: Feature or plugin request
+description: Suggest a new plugin, build option or repository improvement
+title: "[Request]: "
+labels:
+  - enhancement
+body:
+  - type: dropdown
+    id: kind
+    attributes:
+      label: Request type
+      options:
+        - Add a Caddy plugin
+        - Change an existing plugin set
+        - Build / packaging change
+        - APT repository change
+        - Documentation
+        - CI / workflow change
+    validations:
+      required: true
+  - type: input
+    id: module
+    attributes:
+      label: Plugin module path (if applicable)
+      description: The Go module path used with `xcaddy --with`.
+      placeholder: "github.com/owner/caddy-plugin"
+    validations:
+      required: false
+  - type: textarea
+    id: use_case
+    attributes:
+      label: Use case
+      description: What are you trying to achieve? Include the relevant Caddyfile snippet if possible.
+    validations:
+      required: true
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives considered
+      description: Existing modules, workarounds, or why the standard Caddy build is not enough.
+    validations:
+      required: false
+  - type: checkboxes
+    id: checks
+    attributes:
+      label: Checklist
+      options:
+        - label: The plugin is not already part of the standard Caddy build.
+          required: true
+        - label: I have checked that the plugin supports the current upstream Caddy version.
+          required: true

@@ -29,7 +29,7 @@ env:
   UPSTREAM_REPO: caddyserver/caddy
   XCADDY_VERSION: v0.4.7
   KEEP_VERSIONS: "3"
-  PAGES_BASE_URL: https://minimaxflora.github.io/EasyCaddy
+  PAGES_BASE_URL: https://caddy.tatalvpai.vip
   PLUGINS: |
     github.com/caddy-dns/cloudflare
     github.com/caddy-dns/alidns
@@ -165,7 +165,7 @@ jobs:
           TAG: ${{ needs.resolve.outputs.tag }}
         run: |
           set -euo pipefail
-          bash scripts/make-deb.sh "dist/caddy" "$TAG" "${{ matrix.asset }}" "dist"
+          bash .github/scripts/make-deb.sh "dist/caddy" "$TAG" "${{ matrix.asset }}" "dist"
 
       - name: Package tarball
         env:
@@ -339,7 +339,7 @@ jobs:
           TAG: ${{ needs.resolve.outputs.tag }}
         run: |
           set -euo pipefail
-          bash scripts/make-apt-repo.sh "$TAG" site "$KEEP_VERSIONS"
+          bash .github/scripts/make-apt-repo.sh "$TAG" site "$KEEP_VERSIONS"
 
       - name: Configure Pages
         if: steps.release.outputs.exists == 'true'

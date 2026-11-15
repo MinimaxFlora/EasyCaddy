@@ -11,9 +11,9 @@ TAG="${1:?upstream tag is required (e.g. v2.11.9)}"
 SITE="${2:?output site directory is required}"
 KEEP="${3:-3}"
 REPO="${GITHUB_REPOSITORY:-MinimaxFlora/EasyCaddy}"
-PAGES_BASE_URL="${PAGES_BASE_URL:-https://minimaxflora.github.io/EasyCaddy}"
+PAGES_BASE_URL="${PAGES_BASE_URL:-https://caddy.tatalvpai.vip}"
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-REPO_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
+REPO_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
 
 log() { printf '[apt-repo] %s\n' "$*"; }
 

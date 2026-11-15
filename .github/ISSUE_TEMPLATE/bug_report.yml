@@ -1,0 +1,90 @@
+name: Bug report
+description: Report a problem with an EasyCaddy build, package or the APT repository
+title: "[Bug]: "
+labels:
+  - bug
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for taking the time to report a problem. Please do **not** paste
+        private keys, API tokens, real domains you do not own, or unredacted
+        Caddyfiles containing credentials.
+  - type: input
+    id: version
+    attributes:
+      label: EasyCaddy version
+      description: Output of `caddy version` and `dpkg-query -W caddy`.
+      placeholder: "v2.11.9 / caddy 2.11.9"
+    validations:
+      required: true
+  - type: dropdown
+    id: architecture
+    attributes:
+      label: Architecture
+      options:
+        - amd64
+        - arm64
+        - armv7 (armhf)
+        - armv6
+        - armv5 (armel)
+        - ppc64le (ppc64el)
+        - riscv64
+        - s390x
+        - other / not sure
+    validations:
+      required: true
+  - type: input
+    id: os
+    attributes:
+      label: Operating system
+      description: Output of `cat /etc/os-release | head -3` and `uname -r`.
+      placeholder: "Debian GNU/Linux 13 (trixie), 6.12.48+deb13-amd64"
+    validations:
+      required: true
+  - type: dropdown
+    id: install_method
+    attributes:
+      label: How did you install it?
+      options:
+        - install.sh from the APT repository
+        - Manual APT source setup
+        - Direct .deb from a GitHub Release
+        - Tarball binary
+        - Built locally with xcaddy
+    validations:
+      required: true
+  - type: textarea
+    id: problem
+    attributes:
+      label: What happened?
+      description: Describe the actual behaviour and what you expected instead.
+    validations:
+      required: true
+  - type: textarea
+    id: config
+    attributes:
+      label: Relevant configuration
+      description: A minimal Caddyfile or JSON config that reproduces the issue.
+      render: caddyfile
+    validations:
+      required: false
+  - type: textarea
+    id: logs
+    attributes:
+      label: Logs
+      description: "`journalctl -u caddy --no-pager -n 100`, `caddy validate` output, or apt output."
+      render: shell
+    validations:
+      required: false
+  - type: checkboxes
+    id: checks
+    attributes:
+      label: Checklist
+      options:
+        - label: I am using a build from this repository, not the official Caddy package.
+          required: true
+        - label: I have searched existing issues and the README.
+          required: true
+        - label: I have removed secrets and personal data from the report.
+          required: true
