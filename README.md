@@ -169,6 +169,7 @@ pages/assets/site.js               Theme, navigation, tabs and copy interactions
 pages/assets/theme.js              Pre-paint theme bootstrap
 pages/assets/i18n.js               Five-language translations
 pages/assets/caddy.svg             Favicon and brand icon
+pages/assets/og.png                1200x630 Open Graph share card
 pages/install.sh                   User installer
 pages/robots.txt                   Crawler policy
 pages/sitemap.xml                  Search-engine sitemap

@@ -160,6 +160,7 @@ pages/assets/site.js               主题、导航、标签页与复制交互
 pages/assets/theme.js              首屏前的主题引导
 pages/assets/i18n.js               五语言翻译
 pages/assets/caddy.svg             favicon 与品牌图标
+pages/assets/og.png                1200×630 Open Graph 分享图
 pages/install.sh                   用户安装脚本
 pages/robots.txt                   爬虫策略
 pages/sitemap.xml                  搜索引擎站点地图

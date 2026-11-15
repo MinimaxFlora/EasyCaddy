@@ -171,6 +171,7 @@ pages/assets/site.js               テーマ、ナビ、タブ、コピー操作
 pages/assets/theme.js              初回描画前のテーマ初期化
 pages/assets/i18n.js               5 言語の翻訳
 pages/assets/caddy.svg             favicon とブランドアイコン
+pages/assets/og.png                1200×630 Open Graph 共有画像
 pages/install.sh                   ユーザー向けインストーラー
 pages/robots.txt                   クローラーポリシー
 pages/sitemap.xml                  サイトマップ
