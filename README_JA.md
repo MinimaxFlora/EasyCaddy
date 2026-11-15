@@ -106,6 +106,17 @@ apt-cache policy caddy
 Pages サイトには直近 3 バージョンを保持します。それより古い `.deb` は対応する GitHub
 Release からダウンロードできます。
 
+### アンインストールと復元
+
+```bash
+curl -fsSL https://caddy.tatalvpai.vip/uninstall.sh | sudo bash
+```
+
+既定ではパッケージを削除し（設定は purge しません）、EasyCaddy のソース/pin/keyring を
+削除し、インストーラーがバックアップしたファイルを復元します。`/etc/caddy`、
+`/var/lib/caddy`、証明書、ログ、サイトデータは保持されます。`--dry-run` で確認できます。
+設定の削除には `--purge` と `--yes` の両方が必要です。
+
 ## プラグイン
 
 | モジュール | 用途 |
@@ -122,10 +133,10 @@ Release からダウンロードできます。
 | `github.com/zhangjiayin/caddy-geoip2` | GeoIP2 マッチャー |
 | `github.com/WeidiDeng/caddy-cloudflare-ip` | Cloudflare 経由の実クライアント IP を復元 |
 
-プラグインのバージョンは**固定していません**。各ビルドで各リポジトリのデフォルトブランチ
-を解決します（`--with github.com/caddy-dns/cloudflare` の既定動作と同じ）。再現性が必要な
-場合は `.github/workflows/build.yml` の `PLUGINS` に `@v1.2.3` や `@<commit>` を付けて
-ください。
+プラグインのバージョンは [`config/plugins.lock.json`](config/plugins.lock.json) に固定され、
+CI が Caddy `v2.11.9` との組み合わせを検証します。ロックには用途、上流、ライセンス、
+メンテナンス状態、スモークテスト用モジュールも記録されています。変更時はロックを更新し、
+`force` で再ビルドしてください。
 
 ## アーキテクチャ
 
@@ -141,15 +152,16 @@ ARMv7 を APT で提供し、ARMv6 の `.deb` と `.tar.gz` は GitHub Release �
 
 1. `.github/workflows/build.yml` が上流の最新リリースタグ（または `workflow_dispatch` で
    指定したタグ）を解決します。
-2. マトリックスジョブが workflow の `PLUGINS` 環境変数のモジュール群を使って、
+2. `config/build-matrix.json` のマトリックスが `config/plugins.lock.json` の固定版で
    8 つの Linux アーキテクチャ向けに `xcaddy build` を実行します。
-3. `.github/scripts/make-deb.sh` が対応する公式 Caddy の `.deb` をダウンロードし、
-   `/usr/bin/caddy` を独自バイナリに置き換え、Debian Policy の修正を適用し、
-   チェックサムを再生成して再パッケージします。
-4. リリースジョブが `.deb`、`.tar.gz`、SHA-256 チェックサムを含む GitHub Release を公開します。
-5. `.github/scripts/make-apt-repo.sh` が現行と過去 2 バージョンの deb を取得し、
-   `Packages` / `Packages.gz` を生成、`Release` と `InRelease` を署名して GitHub Pages に
-   デプロイします。
+3. `.github/scripts/make-deb.sh` が公式 `.deb` とその SHA-512 を検証し、
+   `/usr/bin/caddy` を置き換え、Debian Policy の修正、ビルド/プラグイン情報の記録、
+   チェックサム再生成を行います。
+4. リリースジョブが `.deb`、`.tar.gz`、SHA-256、CycloneDX SBOM、ビルド情報、
+   ロック/ツールチェーン/マトリクスを GitHub Release として公開します。
+5. `.github/scripts/make-apt-repo.sh` が SemVer で現行と過去バージョンを保持し、
+   全 APT アーキテクチャのパッケージ存在を検証し、`GPG_KEY_FINGERPRINT` の鍵で署名して
+   GitHub Pages にデプロイします。
 
 ## リポジトリ構成
 
@@ -204,10 +216,12 @@ EasyCaddy Repository <easycaddy@users.noreply.github.com>
 - **特定バージョンをビルド**: `upstream_version` に `v2.11.9` などを指定。
 - **既存 Release を強制再ビルド**: `force` を有効化。Release アセットを上書きし、
   インデックスを再生成します。
-- **プラグイン追加**: `PLUGINS` に 1 行 1 モジュールで追加。Caddy 標準ビルドに含まれる
-  モジュールは追加しないでください。
-- **保持バージョン数の変更**: `KEEP_VERSIONS`（既定 `3`）を変更。GitHub Pages には 1 GB の
-  ソフトリミットがあり、1 バージョンあたり 7 パッケージで約 140 MB です。
+- **プラグインの追加・更新**: `config/plugins.lock.json` を変更し、現在の tag を
+  `force` で再ビルドします。Caddy 標準ビルドに含まれるモジュールは追加しないでください。
+- **ツールチェーンの固定・更新**: `config/toolchain.json` を変更します。
+- **保持バージョン数の変更**: `config/build-matrix.json` の `keep_versions`（既定 `3`）を
+  変更します。GitHub Pages には 1 GB のソフトリミットがあり、1 バージョンあたり 7
+  パッケージで約 140 MB です。
 - **公開 URL の変更**: workflow の `PAGES_BASE_URL`、`pages/install.sh` の `BASE_URL` と
   pin の origin、Pages のカスタムドメイン、各 README のリンクを更新します。
 
@@ -252,7 +266,8 @@ amd64 ビルド後に lintian を実行します（advisory、公開はブロッ
 ## 制限事項
 
 - 非公式ビルドであり、保証はありません。本番環境では事前にテストしてください。
-- プラグインのバージョンはビルド時に解決されるため、既定では再現可能ではありません。
+- プラグインのバージョンは固定されていますが、Go バイナリの完全な再現性はツールチェーン、
+  タイムスタンプ、上流のビルド環境に依存します。ビルド情報、チェックサム、SBOM を公開します。
 - `caddy-geoip2` は MaxMind GeoLite2 / GeoIP2 データベースを別途用意する必要があります。
 - `greenpau/caddy-security` はバイナリサイズとビルド時間を大幅に増やします。
 - 定期実行は上流に**新しい**リリースタグが現れた場合のみビルドします。同名の Release が

@@ -71,6 +71,12 @@ sudo apt update
 sudo apt install --reinstall caddy
 ```
 
+在信任下载的公钥前，请与 README 中公布的指纹核对：
+
+```bash
+curl -fsSL https://caddy.tatalvpai.vip/public.key | gpg --show-keys
+```
+
 因为版本号和官方相同，如果机器上已经装了官方同版本 `caddy`，普通的
 `apt install caddy` 会认为“已是最新”而不做任何事；`--reinstall` 才会真正换成带插件的构建。
 APT pin 保证即使之后重新启用官方源，也仍然优先选择本仓库的包。
@@ -99,6 +105,16 @@ apt-cache policy caddy
 
 Pages 站点保留最近 3 个版本。更早的 `.deb` 可以从对应的 GitHub Release 下载。
 
+### 卸载与恢复
+
+```bash
+curl -fsSL https://caddy.tatalvpai.vip/uninstall.sh | sudo bash
+```
+
+默认卸载会移除软件包（不 purge 配置）、删除 EasyCaddy 源/pin/keyring，并恢复安装器备份的文件。
+`/etc/caddy`、`/var/lib/caddy`、证书、日志和站点数据会保留。可加 `--dry-run` 预览。
+要删除配置必须同时使用 `--purge` 和 `--yes`。
+
 ## 内置插件
 
 | 模块 | 用途 |
@@ -115,9 +131,9 @@ Pages 站点保留最近 3 个版本。更早的 `.deb` 可以从对应的 GitHu
 | `github.com/zhangjiayin/caddy-geoip2` | GeoIP2 匹配器 |
 | `github.com/WeidiDeng/caddy-cloudflare-ip` | 恢复 Cloudflare 后真实客户端 IP |
 
-插件版本**没有固定**，每次构建都解析各仓库默认分支的最新版本，与
-`--with github.com/caddy-dns/cloudflare` 的默认行为一致。若希望构建可复现，可在
-`.github/workflows/build.yml` 的 `PLUGINS` 中写成 `github.com/...@v1.2.3` 或 `@<commit>`。
+插件版本锁定在 [`config/plugins.lock.json`](config/plugins.lock.json)，并由 CI 验证与
+Caddy `v2.11.9` 的兼容性。锁文件同时记录用途、上游地址、许可证、维护状态和冒烟测试模块。
+调整插件时修改锁文件并用 `force` 重新构建，不要依赖浮动分支。
 
 ## 架构
 
@@ -128,17 +144,21 @@ APT 索引包含除 `armv6` 之外的所有架构。上游把 ARMv6 和 ARMv7 �
 `armhf`，同包名、同版本、同架构的两个包不能共存于一个索引。ARMv7 通过 APT 提供；
 ARMv6 的 `.deb` 和 `.tar.gz` 放在 GitHub Release 供手动下载。
 
+已实测与仅构建的平台分开记录在 [docs/COMPATIBILITY.md](docs/COMPATIBILITY.md)。
+目前只有 Debian 13 amd64 完成运行时验证；其他架构仅交叉编译，未在目标硬件执行。
+
 ## 工作方式
 
 1. `.github/workflows/build.yml` 解析上游最新 release tag（或 `workflow_dispatch` 指定的 tag）。
-2. 矩阵任务用 `xcaddy build` 为 8 个 Linux 架构编译，插件清单来自 workflow 的
-   `PLUGINS` 环境变量。
-3. `.github/scripts/make-deb.sh` 下载对应版本的官方 `.deb`，替换 `/usr/bin/caddy`，
-   应用 Debian Policy 修复，重新计算校验和并打包。
-4. Release 任务发布包含 `.deb`、`.tar.gz` 和 SHA-256 校验和的 GitHub Release。
-5. `.github/scripts/make-apt-repo.sh` 下载当前及前两个版本的 deb，生成
-   `Packages` / `Packages.gz`，用仓库密钥签名 `Release` 与 `InRelease`，然后部署到
-   GitHub Pages。
+2. `config/build-matrix.json` 的矩阵用 `xcaddy build` 为 8 个 Linux 架构编译，
+   插件版本来自 `config/plugins.lock.json`。
+3. `.github/scripts/make-deb.sh` 下载对应版本的官方 `.deb`，验证上游 SHA-512，
+   替换 `/usr/bin/caddy`，应用 Debian Policy 修复，记录构建/插件信息，重新计算校验和并打包。
+4. Release 任务发布包含 `.deb`、`.tar.gz`、SHA-256、CycloneDX SBOM、构建信息和
+   锁文件/工具链/矩阵的 GitHub Release。
+5. `.github/scripts/make-apt-repo.sh` 按 SemVer 保留当前及历史版本，检查每个 APT
+   架构的包是否齐全，用 `GPG_KEY_FINGERPRINT` 指定的密钥签名 `Release` 与
+   `InRelease`，然后部署到 GitHub Pages。
 
 ## 仓库结构
 
@@ -190,9 +210,11 @@ EasyCaddy Repository <easycaddy@users.noreply.github.com>
 
 - **构建指定版本**：在 `upstream_version` 填 `v2.11.9`。
 - **强制重建已有 Release**：勾选 `force`，会覆盖 Release 资产并重新生成索引。
-- **新增插件**：在 `PLUGINS` 中每行添加一个模块路径，不要添加 Caddy 标准构建已有的模块。
-- **调整版本保留数**：修改 `KEEP_VERSIONS`（默认 `3`）。GitHub Pages 有 1 GB 软上限，
-  每版本 7 个包约 140 MB。
+- **新增或更新插件**：修改 `config/plugins.lock.json`，然后对当前 tag 勾选 `force`
+  重新构建。不要添加 Caddy 标准构建已有的模块，并同步更新 `THIRD_PARTY_NOTICES.md` 和页面。
+- **固定或更新工具链**：修改 `config/toolchain.json`。
+- **调整版本保留数**：修改 `config/build-matrix.json` 的 `keep_versions`（默认 `3`）。
+  GitHub Pages 有 1 GB 软上限，每版本 7 个包约 140 MB。
 - **更换公开地址**：同步修改 workflow 的 `PAGES_BASE_URL`、`pages/install.sh` 的
   `BASE_URL` 与 pin origin、Pages 自定义域名，以及各 README 中的链接。
 
@@ -234,7 +256,8 @@ gpg --armor --export easycaddy@users.noreply.github.com > public.key
 ## 说明与限制
 
 - 这是非官方构建，不提供任何担保；生产环境请先在测试机验证。
-- 插件版本在构建时解析，默认不可复现。
+- 插件版本已锁定，但 Go 二进制仍可能受工具链、时间戳和上游构建环境影响，不保证逐字节可复现。
+  发布时会提供构建信息、校验和与 SBOM 以便追溯。
 - `caddy-geoip2` 需要自行提供 MaxMind GeoLite2/GeoIP2 数据库。
 - `greenpau/caddy-security` 会显著增加二进制体积和构建时间。
 - 定时任务只在上游出现**新** release tag 时构建；已存在同名 Release 时自动跳过，除非勾选 `force`。
@@ -246,6 +269,9 @@ gpg --armor --export easycaddy@users.noreply.github.com > public.key
 欢迎提交 Bug、插件请求和 Pull Request。请阅读 [CONTRIBUTING.md](CONTRIBUTING.md)、
 Issue 模板和 [CHANGELOG.md](CHANGELOG.md)。
 
+- [安全策略](SECURITY.md) · [支持](SUPPORT.md) ·
+  [兼容性](docs/COMPATIBILITY.md) · [第三方声明](THIRD_PARTY_NOTICES.md)
+- [许可证](LICENSE) · [商标声明](NOTICE) · [行为准则](CODE_OF_CONDUCT.md)
 - 仓库：https://github.com/MinimaxFlora/EasyCaddy
 - Release：https://github.com/MinimaxFlora/EasyCaddy/releases
 - APT 仓库：https://caddy.tatalvpai.vip

@@ -61,7 +61,6 @@
           <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
             <circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3c2.8 2.4 4.2 5.5 4.2 9s-1.4 6.6-4.2 9c-2.8-2.4-4.2-5.5-4.2-9S9.2 5.4 12 3Z"/>
           </svg>
-          <span class="lang-code" id="lang-code">简</span>
         </button>
         <div class="lang-list" id="lang-list" role="listbox" aria-label="语言" data-i18n-aria-label="nav.langLabel" hidden>
           <button type="button" role="option" data-lang="zh-CN" aria-selected="true">简体中文</button>
@@ -109,6 +108,7 @@
       <div class="orb orb-b"></div>
       <div class="orb orb-c"></div>
       <div class="grid-lines"></div>
+      <canvas class="field-canvas" id="field" aria-hidden="true"></canvas>
     </div>
 
     <div class="hero-grid">
@@ -230,6 +230,7 @@ apt-cache policy caddy</code></pre>
           <button class="copy" type="button" data-copy-target="install-upgrade" data-i18n="misc.copy">复制</button>
         </div>
         <p data-i18n-html="install.upgrade.desc">站点保留最近 3 个版本，旧版本仍可从 GitHub Releases 下载。需要固定版本时，用 <code>apt</code> 显式安装指定版本。</p>
+        <p><span data-i18n="install.uninstallLabel">卸载或恢复官方源：</span> <code>curl -fsSL @PAGES_BASE_URL@/uninstall.sh | sudo bash</code></p>
         <div class="callout">
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 9v4M12 17h.01"/><path d="M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0Z"/></svg>
           <span data-i18n-html="install.upgrade.note">不要运行 <code>caddy upgrade</code>：它会下载官方二进制并覆盖当前文件，新增模块会全部丢失。</span>
@@ -496,6 +497,7 @@ gpg --verify InRelease</code></pre>
 </footer>
 
 <script src="assets/i18n.js"></script>
+<script src="assets/field.js"></script>
 <script src="assets/site.js"></script>
 </body>
 </html>

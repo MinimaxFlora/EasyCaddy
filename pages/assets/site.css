@@ -293,13 +293,7 @@ img { max-width: 100%; }
 .menu-btn { display: none; }
 
 .lang { position: relative; }
-.lang-btn { width: auto; gap: 6px; padding: 0 9px; }
-.lang-code {
-  font-family: var(--font-mono);
-  font-size: 10.5px;
-  font-weight: 650;
-  letter-spacing: .02em;
-}
+.lang-btn { width: 36px; padding: 0; gap: 0; }
 .lang-list {
   position: absolute;
   top: calc(100% + 8px);
@@ -381,6 +375,14 @@ main { overflow: clip; }
 :root[data-theme="dark"] .orb { opacity: .2; }
 @media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) .orb { opacity: .2; } }
 
+.field-canvas {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  opacity: .8;
+  pointer-events: none;
+}
 .grid-lines {
   position: absolute;
   inset: 0;

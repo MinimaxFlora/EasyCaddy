@@ -1,0 +1,174 @@
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches:
+      - master
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  static:
+    name: Static checks
+    runs-on: ubuntu-26.04
+    timeout-minutes: 15
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7.0.1
+
+      - name: Install static tools
+        run: |
+          set -euo pipefail
+          sudo apt-get update -qq
+          sudo DEBIAN_FRONTEND=noninteractive apt-get install -y -qq \
+            shellcheck yamllint python3-yaml jq
+          curl -fsSL -o /tmp/actionlint.tar.gz \
+            https://github.com/rhysd/actionlint/releases/download/v1.7.12/actionlint_1.7.12_linux_amd64.tar.gz
+          tar -C /tmp -xzf /tmp/actionlint.tar.gz actionlint
+          sudo install -m 0755 /tmp/actionlint /usr/local/bin/actionlint
+
+      - name: Run static checks
+        run: bash .github/scripts/ci/static-checks.sh
+
+  packaging:
+    name: Build and package amd64
+    runs-on: ubuntu-26.04
+    timeout-minutes: 60
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7.0.1
+
+      - name: Read toolchain
+        id: tools
+        run: |
+          set -euo pipefail
+          {
+            echo "go=$(jq -r .go config/toolchain.json)"
+            echo "xcaddy=$(jq -r .xcaddy config/toolchain.json)"
+            echo "tag=$(jq -r .verified_caddy config/plugins.lock.json)"
+          } >> "$GITHUB_OUTPUT"
+
+      - name: Set up Go
+        uses: actions/setup-go@v7.0.0
+        with:
+          go-version: ${{ steps.tools.outputs.go }}
+          cache: false
+
+      - name: Cache Go modules
+        uses: actions/cache@v6.1.0
+        with:
+          path: ~/go/pkg/mod
+          key: gomod-ci-${{ runner.os }}-${{ steps.tools.outputs.tag }}-${{ hashFiles('config/plugins.lock.json') }}
+
+      - name: Install xcaddy
+        run: |
+          set -euo pipefail
+          go install github.com/caddyserver/xcaddy/cmd/xcaddy@${{ steps.tools.outputs.xcaddy }}
+          echo "$(go env GOPATH)/bin" >> "$GITHUB_PATH"
+
+      - name: Build with locked plugins
+        env:
+          TAG: ${{ steps.tools.outputs.tag }}
+        run: |
+          set -euo pipefail
+          mkdir -p dist
+          args=()
+          while IFS= read -r plugin; do
+            args+=(--with "$plugin")
+          done < <(jq -r '.plugins[] | "\(.module)@\(.version)"' config/plugins.lock.json)
+          GOOS=linux GOARCH=amd64 CGO_ENABLED=0 \
+            xcaddy build "$TAG" --output dist/caddy "${args[@]}"
+          go version -m dist/caddy > dist/build-info.txt
+          python3 .github/scripts/ci/verify-build.py dist/caddy config/plugins.lock.json
+
+      - name: Package and inspect
+        env:
+          TAG: ${{ steps.tools.outputs.tag }}
+        run: |
+          set -euo pipefail
+          bash .github/scripts/make-deb.sh dist/caddy "$TAG" linux_amd64 dist
+          deb="$(ls dist/caddy_*_linux_amd64.deb)"
+          dpkg-deb -f "$deb" Package Version Architecture Maintainer
+          dpkg-deb -I "$deb"
+          dpkg-deb -c "$deb" | grep -E 'usr/bin/caddy|usr/lib/systemd/system/caddy.service|etc/caddy/Caddyfile'
+          sudo apt-get update -qq
+          sudo DEBIAN_FRONTEND=noninteractive apt-get install -y -qq lintian
+          set +e
+          lintian --display-info "$deb" | tee lintian.txt
+          rc=${PIPESTATUS[0]}
+          set -e
+          [ "$rc" -le 1 ] || exit "$rc"
+
+      - name: Binary and module smoke test
+        run: |
+          set -euo pipefail
+          dist/caddy version
+          dist/caddy list-modules > modules.txt
+          python3 - <<'PY'
+          import json
+          with open("config/plugins.lock.json", encoding="utf-8") as fh:
+              lock = json.load(fh)
+          modules = set(open("modules.txt", encoding="utf-8").read().splitlines())
+          missing = [m for p in lock["plugins"] for m in p["smoke_modules"] if m not in modules]
+          if missing:
+              raise SystemExit("missing modules: " + ", ".join(missing))
+          print("all locked smoke modules present")
+          PY
+          cat > Caddyfile.test <<'EOF'
+          {
+              order rate_limit before basicauth
+          }
+          :8081 {
+              rate_limit {
+                  zone test {
+                      key {remote_host}
+                      events 10
+                      window 1m
+                  }
+              }
+              respond "ok"
+          }
+          EOF
+          dist/caddy validate --config Caddyfile.test --adapter caddyfile
+
+      - name: Upload package artifact
+        uses: actions/upload-artifact@v7.0.2
+        with:
+          name: caddy-ci-deb
+          path: dist/caddy_*_linux_amd64.deb
+          if-no-files-found: error
+          retention-days: 7
+
+  apt:
+    name: APT repository test
+    needs: packaging
+    runs-on: ubuntu-26.04
+    timeout-minutes: 20
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7.0.1
+
+      - name: Install APT tools
+        run: |
+          set -euo pipefail
+          sudo apt-get update -qq
+          sudo DEBIAN_FRONTEND=noninteractive apt-get install -y -qq apt-utils gnupg jq python3
+
+      - name: Download package
+        uses: actions/download-artifact@v8.0.2
+        with:
+          name: caddy-ci-deb
+          path: artifacts
+
+      - name: Generate and verify signed repository
+        run: |
+          set -euo pipefail
+          deb="$(ls artifacts/caddy_*_linux_amd64.deb)"
+          bash .github/scripts/ci/test-apt-repo.sh "$deb" .tmp/ci-apt-site

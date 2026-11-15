@@ -1,0 +1,14 @@
+EasyCaddy
+Copyright 2026 EasyCaddy contributors
+
+This repository's original packaging scripts, workflow definitions, installer
+and documentation are licensed under the Apache License, Version 2.0 (see
+LICENSE).
+
+EasyCaddy is an unofficial rebuild of Caddy. Caddy and the Caddy logo are
+trademarks of Stack Holdings GmbH. EasyCaddy is not affiliated with, endorsed
+by, or sponsored by the Caddy project.
+
+The Caddy source and all bundled third-party modules are distributed under
+their own upstream licenses. See THIRD_PARTY_NOTICES.md and the SBOM published
+with each release.

@@ -1,0 +1,99 @@
+{
+  "keep_versions": 3,
+  "architectures": [
+    {
+      "id": "amd64",
+      "label": "x86_64",
+      "goarch": "amd64",
+      "goarm": "",
+      "asset": "linux_amd64",
+      "debarch": "amd64",
+      "apt": true
+    },
+    {
+      "id": "arm64",
+      "label": "aarch64",
+      "goarch": "arm64",
+      "goarm": "",
+      "asset": "linux_arm64",
+      "debarch": "arm64",
+      "apt": true
+    },
+    {
+      "id": "armv7",
+      "label": "ARMv7",
+      "goarch": "arm",
+      "goarm": "7",
+      "asset": "linux_armv7",
+      "debarch": "armhf",
+      "apt": true
+    },
+    {
+      "id": "armv6",
+      "label": "ARMv6",
+      "goarch": "arm",
+      "goarm": "6",
+      "asset": "linux_armv6",
+      "debarch": "armhf",
+      "apt": false,
+      "exclusion_reason": "Debian armhf cannot distinguish ARMv6 from ARMv7; the ARMv6 package is Release-only."
+    },
+    {
+      "id": "armv5",
+      "label": "ARMv5",
+      "goarch": "arm",
+      "goarm": "5",
+      "asset": "linux_armv5",
+      "debarch": "armel",
+      "apt": true
+    },
+    {
+      "id": "ppc64le",
+      "label": "ppc64le",
+      "goarch": "ppc64le",
+      "goarm": "",
+      "asset": "linux_ppc64le",
+      "debarch": "ppc64el",
+      "apt": true
+    },
+    {
+      "id": "riscv64",
+      "label": "RISC-V 64",
+      "goarch": "riscv64",
+      "goarm": "",
+      "asset": "linux_riscv64",
+      "debarch": "riscv64",
+      "apt": true
+    },
+    {
+      "id": "s390x",
+      "label": "s390x",
+      "goarch": "s390x",
+      "goarm": "",
+      "asset": "linux_s390x",
+      "debarch": "s390x",
+      "apt": true
+    }
+  ],
+  "compatibility": {
+    "verified": [
+      {
+        "distribution": "Debian GNU/Linux 13",
+        "architecture": "amd64",
+        "scope": "APT install, package reinstall, module loading, systemd start and HTTP smoke test",
+        "date": "2026-11-15"
+      }
+    ],
+    "build_only": [
+      {
+        "distribution": "Ubuntu 26.04 (GitHub Actions)",
+        "architecture": "amd64",
+        "scope": "cross-build and package generation"
+      }
+    ],
+    "untested": [
+      "All other architectures execute only on their target hardware and have not been run-tested.",
+      "Ubuntu/Debian releases other than those listed above are untested; compatibility is not claimed."
+    ]
+  }
+}

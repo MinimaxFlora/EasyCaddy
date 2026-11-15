@@ -45,6 +45,7 @@
       "install.one.note": "包版本与官方一致。脚本使用 <code>--reinstall</code> 和 APT pin，确保选中这个带插件的构建，而不是跳过安装。",
       "install.manual.note": "不要同时启用官方 Caddy APT 源。两者包名和版本相同，apt 只能靠 pin 区分；<code>install.sh</code> 会自动把官方源改名为 <code>.disabled-by-easycaddy</code>。",
       "install.upgrade.desc": "站点保留最近 3 个版本，旧版本仍可从 GitHub Releases 下载。需要固定版本时，用 <code>apt</code> 显式安装指定版本。",
+      "install.uninstallLabel": "卸载或恢复官方源：",
       "install.upgrade.note": "不要运行 <code>caddy upgrade</code>：它会下载官方二进制并覆盖当前文件，新增模块会全部丢失。",
       "mini.verify": "验证安装",
       "mini.source": "检查来源与优先级",
@@ -146,6 +147,7 @@
       "install.one.note": "套件版本與官方一致。腳本使用 <code>--reinstall</code> 和 APT pin，確保選中這個帶外掛的建置，而不是跳過安裝。",
       "install.manual.note": "不要同時啟用官方 Caddy APT 來源。兩者套件名稱和版本相同，apt 只能靠 pin 區分；<code>install.sh</code> 會自動把官方來源改名為 <code>.disabled-by-easycaddy</code>。",
       "install.upgrade.desc": "網站保留最近 3 個版本，舊版本仍可從 GitHub Releases 下載。需要固定版本時，用 <code>apt</code> 明確安裝指定版本。",
+      "install.uninstallLabel": "解除安裝或還原來源：",
       "install.upgrade.note": "不要執行 <code>caddy upgrade</code>：它會下載官方二進位檔並覆蓋目前檔案，新增模組會全部遺失。",
       "mini.verify": "驗證安裝",
       "mini.source": "檢查來源與優先順序",
@@ -247,6 +249,7 @@
       "install.one.note": "The package version matches upstream. The script uses <code>--reinstall</code> and an APT pin to select this plugin build instead of skipping the install.",
       "install.manual.note": "Do not enable the official Caddy APT source at the same time. Both use the same package name and version, so only the pin can distinguish them; <code>install.sh</code> renames the official source to <code>.disabled-by-easycaddy</code>.",
       "install.upgrade.desc": "The site keeps the three most recent releases; older versions remain on GitHub Releases. To pin a version, install it explicitly with <code>apt</code>.",
+      "install.uninstallLabel": "Uninstall or restore the official source:",
       "install.upgrade.note": "Do not run <code>caddy upgrade</code>: it downloads the official binary and overwrites this build, removing every added module.",
       "mini.verify": "Verify the install",
       "mini.source": "Check source and pin",
@@ -348,6 +351,7 @@
       "install.one.note": "パッケージのバージョンは上流と同一です。スクリプトは <code>--reinstall</code> と APT pin を使い、インストールをスキップせず、このプラグイン入りビルドを選択します。",
       "install.manual.note": "公式 Caddy APT ソースを同時に有効にしないでください。パッケージ名とバージョンが同じため、pin でのみ区別できます。<code>install.sh</code> は公式ソースを <code>.disabled-by-easycaddy</code> にリネームします。",
       "install.upgrade.desc": "サイトには直近 3 バージョンを保持し、それ以前は GitHub Releases から取得できます。バージョンを固定する場合は <code>apt</code> で明示的にインストールしてください。",
+      "install.uninstallLabel": "アンインストールまたは公式ソースの復元:",
       "install.upgrade.note": "<code>caddy upgrade</code> は実行しないでください。公式バイナリをダウンロードして上書きするため、追加モジュールがすべて失われます。",
       "mini.verify": "インストール確認",
       "mini.source": "ソースと優先度を確認",
@@ -449,6 +453,7 @@
       "install.one.note": "패키지 버전은 업스트림과 같습니다. 스크립트는 <code>--reinstall</code>과 APT pin을 사용해 설치를 건너뛰지 않고 이 플러그인 빌드를 선택합니다.",
       "install.manual.note": "공식 Caddy APT 소스를 동시에 활성화하지 마세요. 패키지 이름과 버전이 같아 pin으로만 구분할 수 있습니다. <code>install.sh</code>는 공식 소스를 <code>.disabled-by-easycaddy</code>로 변경합니다.",
       "install.upgrade.desc": "사이트에는 최근 3개 버전이 유지되며, 더 오래된 버전은 GitHub Releases에서 받을 수 있습니다. 버전을 고정하려면 <code>apt</code>로 명시적으로 설치하세요.",
+      "install.uninstallLabel": "제거 또는 공식 소스 복원:",
       "install.upgrade.note": "<code>caddy upgrade</code>를 실행하지 마세요. 공식 바이너리를 내려받아 덮어쓰므로 추가 모듈이 모두 사라집니다.",
       "mini.verify": "설치 확인",
       "mini.source": "소스와 우선순위 확인",
@@ -517,7 +522,6 @@
   var SUPPORTED = Object.keys(I18N);
   var current = DEFAULT_LANG;
   var langButton = document.getElementById("lang-btn");
-  var langCode = document.getElementById("lang-code");
   var langList = document.getElementById("lang-list");
 
   function normalize(value) {
@@ -565,10 +569,6 @@
     var ogDesc = document.querySelector('meta[property="og:description"]');
     if (ogDesc) ogDesc.setAttribute("content", t("meta.desc"));
 
-    if (langCode) {
-      var short = { "zh-CN": "简", "zh-TW": "繁", en: "EN", ja: "日", ko: "한" };
-      langCode.textContent = short[current] || "EN";
-    }
     document.querySelectorAll("[data-lang]").forEach(function (button) {
       button.setAttribute("aria-selected", button.getAttribute("data-lang") === current ? "true" : "false");
     });

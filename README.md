@@ -72,6 +72,13 @@ sudo apt update
 sudo apt install --reinstall caddy
 ```
 
+Before trusting the downloaded key, compare its fingerprint with the value published in
+this README:
+
+```bash
+curl -fsSL https://caddy.tatalvpai.vip/public.key | gpg --show-keys
+```
+
 Because the version is identical to upstream, a plain `apt install caddy` does nothing
 when an official package of the same version is already installed. `--reinstall` forces
 the package from this repository to be unpacked. The APT pin keeps this repository
@@ -103,6 +110,17 @@ apt-cache policy caddy
 The Pages site keeps the three most recent releases. Older `.deb` files remain available
 from the corresponding GitHub Release.
 
+### Uninstall and restore
+
+```bash
+curl -fsSL https://caddy.tatalvpai.vip/uninstall.sh | sudo bash
+```
+
+By default the uninstaller removes the package (without purging configuration), removes
+the EasyCaddy source/pin/keyring, and restores files backed up by the installer.
+`/etc/caddy`, `/var/lib/caddy`, certificates, logs and site data are preserved. Add
+`--dry-run` to preview. Purging configuration requires both `--purge` and `--yes`.
+
 ## Plugins
 
 | Module | Purpose |
@@ -119,10 +137,10 @@ from the corresponding GitHub Release.
 | `github.com/zhangjiayin/caddy-geoip2` | GeoIP2 matchers |
 | `github.com/WeidiDeng/caddy-cloudflare-ip` | Restore real client IPs behind Cloudflare |
 
-Plugin versions are **not pinned**. Every build resolves the default branch of each
-repository, matching the behaviour of `--with github.com/caddy-dns/cloudflare`. To make
-builds reproducible, append `@v1.2.3` or `@<commit>` in the `PLUGINS` block of
-`.github/workflows/build.yml`.
+Plugin versions are locked in [`config/plugins.lock.json`](config/plugins.lock.json) and
+verified against Caddy `v2.11.9` by CI. The lock also records the purpose, upstream,
+license, maintenance status and smoke-test modules for every entry. Update the lock file
+and rebuild to change a module; do not rely on floating branches.
 
 ## Architectures
 
@@ -134,27 +152,38 @@ ARMv7 packages as Debian architecture `armhf`, and two packages with the same na
 version and architecture cannot coexist in one package index. The ARMv7 build is served
 through APT; the ARMv6 `.deb` and `.tar.gz` are available from the GitHub Release.
 
+Tested and untested platforms are kept separate in
+[docs/COMPATIBILITY.md](docs/COMPATIBILITY.md). Only Debian 13 amd64 has been runtime
+verified; the other architectures are cross-compiled but not executed on target hardware.
+
 ## How it works
 
 1. `.github/workflows/build.yml` resolves the latest upstream release tag (or a tag
    supplied through `workflow_dispatch`).
-2. A matrix job runs `xcaddy build` for all eight Linux architectures with the plugin
-   list from the workflow `PLUGINS` environment variable.
-3. `.github/scripts/make-deb.sh` downloads the matching official Caddy `.deb`, replaces
-   `/usr/bin/caddy` with the custom binary, applies Debian Policy fixes, regenerates
-   checksums and repacks the package.
-4. The release job publishes a GitHub Release with `.deb`, `.tar.gz` and SHA-256
-   checksums.
-5. `.github/scripts/make-apt-repo.sh` downloads the current and two previous releases,
-   generates `Packages` / `Packages.gz`, signs `Release` and `InRelease` with the
-   repository key, and deploys the site to GitHub Pages.
+2. A matrix from `config/build-matrix.json` runs `xcaddy build` for all eight Linux
+   architectures with the exact module versions from `config/plugins.lock.json`.
+3. `.github/scripts/make-deb.sh` downloads the matching official Caddy `.deb`, verifies
+   its upstream SHA-512 checksum, replaces `/usr/bin/caddy` with the custom binary,
+   applies Debian Policy fixes, records build/plugin provenance, regenerates checksums
+   and repacks the package.
+4. The release job publishes a GitHub Release with `.deb`, `.tar.gz`, SHA-256
+   checksums, a CycloneDX SBOM, build info and the lock/toolchain/matrix files.
+5. `.github/scripts/make-apt-repo.sh` retains the current and previous releases by
+   SemVer, verifies that every APT architecture is present, signs `Release` and
+   `InRelease` with the fingerprint configured in `GPG_KEY_FINGERPRINT`, and deploys the
+   site to GitHub Pages.
 
 ## Repository layout
 
 ```text
+config/build-matrix.json           Authoritative architecture/build matrix
+config/plugins.lock.json           Pinned plugin versions, licenses and smoke modules
+config/toolchain.json              Pinned Go, xcaddy and syft versions
 .github/workflows/build.yml        Build, release and Pages deployment
+.github/workflows/ci.yml           Pull-request quality and packaging checks
 .github/scripts/make-deb.sh        Repack the upstream .deb with the custom binary
 .github/scripts/make-apt-repo.sh   Collect packages, build indexes and sign them
+.github/scripts/ci/                Static/config/site/APT/build verification
 .github/ISSUE_TEMPLATE/            Issue forms
 .github/CODEOWNERS                 Review ownership
 .github/FUNDING.yml                Sponsorship links
@@ -167,13 +196,19 @@ pages/index.html                   Semantic page structure
 pages/assets/site.css              Page design tokens and components
 pages/assets/site.js               Theme, navigation, tabs and copy interactions
 pages/assets/theme.js              Pre-paint theme bootstrap
+pages/assets/field.js              Hero canvas crawler effect
 pages/assets/i18n.js               Five-language translations
 pages/assets/caddy.svg             Favicon and brand icon
 pages/assets/og.png                1200x630 Open Graph share card
 pages/install.sh                   User installer
+pages/uninstall.sh                 Safe uninstall/restore script
 pages/robots.txt                   Crawler policy
 pages/sitemap.xml                  Search-engine sitemap
 public.key                         APT repository signing public key
+LICENSE / NOTICE                   Project license and trademark notice
+SECURITY.md / SUPPORT.md           Security and support policy
+THIRD_PARTY_NOTICES.md             Direct module licenses
+docs/COMPATIBILITY.md              Tested vs build-only platforms
 README.md / README_ZH.md / README_JA.md / README_KR.md
 CONTRIBUTING.md                    Contribution guide
 CHANGELOG.md                       Release history
@@ -190,24 +225,30 @@ EasyCaddy Repository <easycaddy@users.noreply.github.com>
 
 1. Add the private key as the `GPG_PRIVATE_KEY` Actions secret. The key has no
    passphrase; keep an offline backup and never commit it.
-2. In **Settings → Pages → Build and deployment**, choose **GitHub Actions** as the
+2. Add the public fingerprint as the `GPG_KEY_FINGERPRINT` repository **variable**.
+   The Pages job refuses to sign if the imported secret key and committed `public.key`
+   do not match this fingerprint.
+3. In **Settings → Pages → Build and deployment**, choose **GitHub Actions** as the
    source and set the custom domain to `caddy.tatalvpai.vip`.
-3. Create a DNS `CNAME` record for `caddy.tatalvpai.vip` pointing to
+4. Create a DNS `CNAME` record for `caddy.tatalvpai.vip` pointing to
    `minimaxflora.github.io`. Use DNS-only mode (grey cloud) while GitHub provisions the
    TLS certificate; proxying can be enabled afterwards.
-4. Run **Actions → Build Caddy with plugins → Run workflow** once.
+5. Run **Actions → Build Caddy with plugins → Run workflow** once.
 
 Manual controls:
 
 - **Build a specific version:** set `upstream_version` to a tag such as `v2.11.9`.
 - **Rebuild an existing release:** enable `force`; release assets are overwritten and
   the index is regenerated.
-- **Add a plugin:** add one module path per line to `PLUGINS`; do not add modules that are
-  already part of the standard Caddy build.
-- **Change the package retention:** edit `KEEP_VERSIONS` (default `3`). GitHub Pages has
-  a 1 GB soft limit; seven packages per version are roughly 140 MB.
-- **Change the public URL:** update `PAGES_BASE_URL` in the workflow, `BASE_URL` and the
-  pin origin in `pages/install.sh`, the Pages custom domain, and the links in the READMEs.
+- **Add or update a plugin:** edit `config/plugins.lock.json`, then run the workflow with
+  `force` for the current tag. Do not add modules already in Caddy's standard build, and
+  update `THIRD_PARTY_NOTICES.md` and the page in the same change.
+- **Pin or update the toolchain:** edit `config/toolchain.json`.
+- **Change package retention:** edit `keep_versions` in `config/build-matrix.json`
+  (default `3`). GitHub Pages has a 1 GB soft limit; seven packages per version are
+  roughly 140 MB.
+- **Change the public URL:** update `PAGES_BASE_URL` in the workflow, the default in
+  `pages/install.sh`, the Pages custom domain, and the links in the READMEs.
 
 ### Rotating the signing key
 
@@ -226,9 +267,10 @@ gpg --armor --export-secret-keys easycaddy@users.noreply.github.com > easycaddy-
 gpg --armor --export easycaddy@users.noreply.github.com > public.key
 ```
 
-Update the `GPG_PRIVATE_KEY` secret and commit the new `public.key`, then run the
-workflow again. Existing installations must download the new key and update their
-`signed-by` keyring.
+Update the `GPG_PRIVATE_KEY` secret, the `GPG_KEY_FINGERPRINT` variable and the committed
+`public.key`, then run the workflow again. Existing installations must download the new
+key and update their `signed-by` keyring. See [SECURITY.md](SECURITY.md) for reporting a
+key compromise.
 
 ## Quality checks
 
@@ -243,15 +285,18 @@ The packaging step applies Debian Policy fixes instead of blindly repacking upst
 - lintian overrides cover properties inherent to Go static binaries
 
 On Debian 13 with lintian 2.122.0 the amd64 package reports **0 errors and 0 warnings**.
-CI also runs lintian on the amd64 build as an advisory step (`lintian.txt` is uploaded
-with the build artifact). `actionlint`, YAML parsing and `bash -n` are part of the
-development checks described in [CONTRIBUTING.md](CONTRIBUTING.md).
+The independent `ci.yml` workflow runs ShellCheck, actionlint, yamllint, configuration
+and secret checks, an amd64 package build, binary/module smoke tests and a signed APT
+test with a temporary key. It has read-only repository permissions and never receives
+`GPG_PRIVATE_KEY`. Development commands are in [CONTRIBUTING.md](CONTRIBUTING.md).
 
 ## Limitations
 
 - This is an unofficial build and comes with no warranty. Validate it in a test
   environment before using it in production.
-- Plugin versions are resolved at build time and are not reproducible by default.
+- Plugin versions are locked, but bit-for-bit reproducibility of Go binaries is not
+  guaranteed across toolchains, timestamps or upstream build environments. Build info,
+  checksums and an SBOM are published for traceability.
 - `caddy-geoip2` requires a MaxMind GeoLite2 or GeoIP2 database supplied by the user.
 - `greenpau/caddy-security` significantly increases binary size and build time.
 - The scheduled workflow only builds when upstream publishes a **new** release tag; an
@@ -267,6 +312,10 @@ Bug reports, plugin requests and pull requests are welcome. See
 [CONTRIBUTING.md](CONTRIBUTING.md), the issue templates, and
 [CHANGELOG.md](CHANGELOG.md).
 
+- [Security policy](SECURITY.md) · [Support](SUPPORT.md) ·
+  [Compatibility](docs/COMPATIBILITY.md) · [Third-party notices](THIRD_PARTY_NOTICES.md)
+- [License](LICENSE) · [Trademark notice](NOTICE) ·
+  [Code of conduct](CODE_OF_CONDUCT.md)
 - Repository: https://github.com/MinimaxFlora/EasyCaddy
 - Releases: https://github.com/MinimaxFlora/EasyCaddy/releases
 - APT repository: https://caddy.tatalvpai.vip

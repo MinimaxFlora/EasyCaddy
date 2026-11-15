@@ -7,19 +7,19 @@ on:
     paths:
       - "pages/**"
       - "assets/**"
-      - ".github/scripts/make-apt-repo.sh"
+      - ".github/scripts/**"
       - ".github/workflows/build.yml"
+      - "public.key"
   schedule:
-    # Every Monday 03:00 UTC. Change this if you want a different cadence.
     - cron: "0 3 * * 1"
   workflow_dispatch:
     inputs:
       upstream_version:
-        description: "Upstream Caddy tag to build (e.g. v2.11.9). Leave empty to use the latest upstream release."
+        description: "Upstream Caddy tag to build (e.g. v2.11.9). Leave empty for the latest stable release."
         required: false
         default: ""
       force:
-        description: "Rebuild even if a release with this tag already exists"
+        description: "Rebuild and overwrite an existing release"
         type: boolean
         required: false
         default: false
@@ -28,6 +28,7 @@ permissions:
   contents: write
   pages: write
   id-token: write
+  attestations: write
 
 concurrency:
   group: build-caddy
@@ -35,32 +36,26 @@ concurrency:
 
 env:
   UPSTREAM_REPO: caddyserver/caddy
-  XCADDY_VERSION: v0.4.7
-  KEEP_VERSIONS: "3"
   PAGES_BASE_URL: https://caddy.tatalvpai.vip
-  PLUGINS: |
-    github.com/caddy-dns/cloudflare
-    github.com/caddy-dns/alidns
-    github.com/caddy-dns/tencentcloud
-    github.com/mholt/caddy-ratelimit
-    github.com/greenpau/caddy-security
-    github.com/mholt/caddy-l4
-    github.com/mholt/caddy-dynamicdns
-    github.com/mholt/caddy-webdav
-    github.com/caddyserver/cache-handler
-    github.com/zhangjiayin/caddy-geoip2
-    github.com/WeidiDeng/caddy-cloudflare-ip
 
 jobs:
   resolve:
-    name: Resolve upstream version
+    name: Resolve version and configuration
     runs-on: ubuntu-26.04
     outputs:
       tag: ${{ steps.meta.outputs.tag }}
       version: ${{ steps.meta.outputs.version }}
       build: ${{ steps.meta.outputs.build }}
+      is_latest: ${{ steps.meta.outputs.is_latest }}
+      matrix: ${{ steps.meta.outputs.matrix }}
+      go_version: ${{ steps.meta.outputs.go_version }}
+      xcaddy_version: ${{ steps.meta.outputs.xcaddy_version }}
+      keep_versions: ${{ steps.meta.outputs.keep_versions }}
     steps:
-      - name: Resolve tag
+      - name: Checkout
+        uses: actions/checkout@v7.0.1
+
+      - name: Resolve metadata
         id: meta
         env:
           GH_TOKEN: ${{ github.token }}
@@ -68,23 +63,39 @@ jobs:
           FORCE: ${{ inputs.force }}
         run: |
           set -euo pipefail
+          matrix="$(jq -c '{include: [.architectures[] | {id, goarch, goarm, asset, debarch, apt}]}' config/build-matrix.json)"
+          go_version="$(jq -r .go config/toolchain.json)"
+          xcaddy_version="$(jq -r .xcaddy config/toolchain.json)"
+          keep_versions="$(jq -r .keep_versions config/build-matrix.json)"
+
           if [ -n "$INPUT_VERSION" ]; then
             tag="$INPUT_VERSION"
+            release_json="$(gh api "repos/$UPSTREAM_REPO/releases/tags/$tag" 2>/dev/null)" \
+              || { echo "::error::Upstream release $tag does not exist"; exit 1; }
+            if [ "$(printf '%s' "$release_json" | jq -r '.draft or .prerelease')" = "true" ]; then
+              echo "::error::Upstream release $tag is a draft or prerelease; stable APT channels only accept stable releases"
+              exit 1
+            fi
           else
             tag="$(gh api "repos/$UPSTREAM_REPO/releases/latest" --jq .tag_name)"
           fi
-          if [[ ! "$tag" =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
-            echo "::error::Invalid upstream tag '$tag' (expected vMAJOR.MINOR.PATCH)"
-            exit 1
-          fi
+          [[ "$tag" =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ ]] \
+            || { echo "::error::Invalid upstream tag '$tag' (expected vMAJOR.MINOR.PATCH)"; exit 1; }
           version="${tag#v}"
+
+          existing_tags="$(gh release list --repo "$GITHUB_REPOSITORY" --limit 100 \
+            --json tagName --jq '.[].tagName' \
+            | grep -E '^v[0-9]+\.[0-9]+\.[0-9]+$' | sort -V || true)"
+          highest="$(printf '%s\n%s\n' "$existing_tags" "$tag" | grep -E '^v[0-9]+\.[0-9]+\.[0-9]+$' | sort -V | tail -1)"
+          is_latest=false
+          [ "$highest" = "$tag" ] && is_latest=true
 
           build=true
           if gh release view "$tag" --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1; then
             if [ "$FORCE" = "true" ]; then
-              echo "Release $tag already exists; rebuilding because force=true."
+              echo "Release $tag exists; rebuilding because force=true."
             else
-              echo "Release $tag already exists; build will be skipped."
+              echo "Release $tag exists; build will be skipped."
               build=false
             fi
           fi
@@ -93,8 +104,13 @@ jobs:
             echo "tag=$tag"
             echo "version=$version"
             echo "build=$build"
+            echo "is_latest=$is_latest"
+            echo "matrix=$matrix"
+            echo "go_version=$go_version"
+            echo "xcaddy_version=$xcaddy_version"
+            echo "keep_versions=$keep_versions"
           } >> "$GITHUB_OUTPUT"
-          echo "Resolved upstream tag: $tag (build=$build)"
+          echo "Resolved $tag (build=$build, latest=$is_latest)"
 
   build:
     name: Build ${{ matrix.asset }}
@@ -104,17 +120,7 @@ jobs:
     timeout-minutes: 120
     strategy:
       fail-fast: false
-      matrix:
-        include:
-          - { goarch: amd64,   goarm: "",  asset: linux_amd64 }
-          - { goarch: arm64,   goarm: "",  asset: linux_arm64 }
-          - { goarch: arm,     goarm: "7", asset: linux_armv7 }
-          - { goarch: arm,     goarm: "6", asset: linux_armv6 }
-          - { goarch: arm,     goarm: "5", asset: linux_armv5 }
-          - { goarch: ppc64le, goarm: "",  asset: linux_ppc64le }
-          - { goarch: riscv64, goarm: "",  asset: linux_riscv64 }
-          - { goarch: s390x,   goarm: "",  asset: linux_s390x }
-
+      matrix: ${{ fromJSON(needs.resolve.outputs.matrix) }}
     steps:
       - name: Checkout
         uses: actions/checkout@v7.0.1
@@ -122,14 +128,14 @@ jobs:
       - name: Set up Go
         uses: actions/setup-go@v7.0.0
         with:
-          go-version: stable
+          go-version: ${{ needs.resolve.outputs.go_version }}
           cache: false
 
       - name: Cache Go modules
         uses: actions/cache@v6.1.0
         with:
           path: ~/go/pkg/mod
-          key: gomod-${{ runner.os }}-${{ needs.resolve.outputs.tag }}-${{ hashFiles('.github/workflows/build.yml') }}
+          key: gomod-${{ runner.os }}-${{ needs.resolve.outputs.tag }}-${{ matrix.asset }}-${{ hashFiles('config/plugins.lock.json', 'config/toolchain.json') }}
           restore-keys: |
             gomod-${{ runner.os }}-${{ needs.resolve.outputs.tag }}-
             gomod-${{ runner.os }}-
@@ -137,43 +143,37 @@ jobs:
       - name: Install xcaddy
         run: |
           set -euo pipefail
-          go install github.com/caddyserver/xcaddy/cmd/xcaddy@${XCADDY_VERSION}
+          go install github.com/caddyserver/xcaddy/cmd/xcaddy@${{ needs.resolve.outputs.xcaddy_version }}
           echo "$(go env GOPATH)/bin" >> "$GITHUB_PATH"
 
-      - name: Build caddy binary
+      - name: Build Caddy with locked plugins
         env:
           TAG: ${{ needs.resolve.outputs.tag }}
           TARGET_GOARCH: ${{ matrix.goarch }}
           TARGET_GOARM: ${{ matrix.goarm }}
         run: |
           set -euo pipefail
+          mkdir -p dist
           args=()
           while IFS= read -r plugin; do
-            [ -n "$plugin" ] && args+=(--with "$plugin")
-          done <<< "$PLUGINS"
+            args+=(--with "$plugin")
+          done < <(jq -r '.plugins[] | "\(.module)@\(.version)"' config/plugins.lock.json)
 
-          mkdir -p dist
           export GOOS=linux
           export GOARCH="$TARGET_GOARCH"
           export GOARM="$TARGET_GOARM"
           export CGO_ENABLED=0
-
           echo "Building Caddy $TAG for GOOS=$GOOS GOARCH=$GOARCH GOARM=${GOARM:-<none>}"
-          # xcaddy already applies -trimpath and -ldflags "-s -w"; it has no
-          # --ldflags flag (v0.4.7).
-          xcaddy build "$TAG" \
-            --output dist/caddy \
-            "${args[@]}"
+          xcaddy build "$TAG" --output dist/caddy "${args[@]}"
 
           file dist/caddy
           go version -m dist/caddy > "dist/build-info-${{ matrix.asset }}.txt"
+          python3 .github/scripts/ci/verify-build.py dist/caddy config/plugins.lock.json
 
       - name: Package .deb
         env:
           TAG: ${{ needs.resolve.outputs.tag }}
-        run: |
-          set -euo pipefail
-          bash .github/scripts/make-deb.sh "dist/caddy" "$TAG" "${{ matrix.asset }}" "dist"
+        run: bash .github/scripts/make-deb.sh dist/caddy "$TAG" "${{ matrix.asset }}" dist
 
       - name: Package tarball
         env:
@@ -192,20 +192,65 @@ jobs:
           cd dist
           sha256sum caddy_*.deb caddy_*.tar.gz | LC_ALL=C sort -k2 > "checksums-${{ matrix.asset }}.txt"
 
-      - name: Lintian policy check (amd64 only)
+      - name: Package inspection (amd64)
         if: matrix.asset == 'linux_amd64'
-        continue-on-error: true
         run: |
           set -euo pipefail
+          deb="$(ls dist/caddy_*_linux_amd64.deb)"
+          dpkg-deb -f "$deb" Package Version Architecture Maintainer
+          dpkg-deb -I "$deb"
+          dpkg-deb -c "$deb" | grep -E 'usr/bin/caddy|usr/lib/systemd/system/caddy.service|etc/caddy/Caddyfile'
           sudo apt-get update -qq
           sudo DEBIAN_FRONTEND=noninteractive apt-get install -y -qq lintian
-          lintian --display-info dist/caddy_*.deb | tee lintian.txt
+          set +e
+          lintian --display-info "$deb" | tee lintian.txt
+          rc=${PIPESTATUS[0]}
+          set -e
+          [ "$rc" -le 1 ] || exit "$rc"
+
+      - name: Binary and module smoke test (amd64)
+        if: matrix.asset == 'linux_amd64'
+        run: |
+          set -euo pipefail
+          dist/caddy version
+          dist/caddy list-modules > modules.txt
+          python3 - <<'PY'
+          import json
+          with open("config/plugins.lock.json", encoding="utf-8") as fh:
+              lock = json.load(fh)
+          modules = set(open("modules.txt", encoding="utf-8").read().splitlines())
+          missing = [m for p in lock["plugins"] for m in p["smoke_modules"] if m not in modules]
+          if missing:
+              raise SystemExit("missing modules: " + ", ".join(missing))
+          print("all locked smoke modules present")
+          PY
+          cat > Caddyfile.test <<'EOF'
+          {
+              order rate_limit before basicauth
+          }
+          :8081 {
+              rate_limit {
+                  zone test {
+                      key {remote_host}
+                      events 10
+                      window 1m
+                  }
+              }
+              respond "ok"
+          }
+          EOF
+          dist/caddy validate --config Caddyfile.test --adapter caddyfile
 
       - name: Upload artifacts
         uses: actions/upload-artifact@v7.0.2
         with:
           name: caddy-${{ matrix.asset }}
-          path: dist/*
+          path: |
+            dist/caddy_*.deb
+            dist/caddy_*.tar.gz
+            dist/build-info-*.txt
+            dist/checksums-*.txt
+            dist/lintian.txt
           if-no-files-found: error
           retention-days: 7
 
@@ -232,8 +277,25 @@ jobs:
           set -euo pipefail
           mkdir -p release
           cp dist/caddy_*.deb dist/caddy_*.tar.gz release/
+          cp dist/build-info-*.txt dist/checksums-*.txt release/
+          cp config/plugins.lock.json config/toolchain.json config/build-matrix.json release/
+          cp public.key release/
+
+          # SBOM for the amd64 binary, using the pinned Syft version.
+          syft_version="$(jq -r .syft config/toolchain.json)"
+          curl -fsSL -o /tmp/syft.tar.gz \
+            "https://github.com/anchore/syft/releases/download/${syft_version}/syft_${syft_version#v}_linux_amd64.tar.gz"
+          tar -C /tmp -xzf /tmp/syft.tar.gz syft
+          version="${TAG#v}"
+          tmpdir="$(mktemp -d)"
+          tar -C "$tmpdir" -xzf "release/caddy_${version}_linux_amd64.tar.gz"
+          /tmp/syft "$tmpdir/caddy" -o "cyclonedx-json=release/sbom.cdx.json"
+          rm -rf "$tmpdir"
+
           cd release
-          sha256sum caddy_*.deb caddy_*.tar.gz | LC_ALL=C sort -k2 > checksums.txt
+          find . -maxdepth 1 -type f ! -name checksums.txt -print0 \
+            | LC_ALL=C sort -z | xargs -0 -r sha256sum > /tmp/easycaddy-checksums.txt
+          mv /tmp/easycaddy-checksums.txt checksums.txt
           ls -lh
 
       - name: Write release notes
@@ -241,29 +303,24 @@ jobs:
           TAG: ${{ needs.resolve.outputs.tag }}
         run: |
           set -euo pipefail
-          version="${TAG#v}"
           {
-            echo "Caddy **$TAG** built with extra third-party plugins."
+            echo "Caddy **$TAG** built with locked third-party plugins."
             echo
             echo "- Upstream release: https://github.com/$UPSTREAM_REPO/releases/tag/$TAG"
             echo "- APT repository: $PAGES_BASE_URL"
-            echo "- Install: see the repository README, or run \`curl -fsSL $PAGES_BASE_URL/install.sh | sudo bash\`"
+            echo "- Install: \`curl -fsSL $PAGES_BASE_URL/install.sh | sudo bash\`"
             echo
-            echo "### Plugins"
-            while IFS= read -r plugin; do
-              [ -n "$plugin" ] && echo "- \`$plugin\`"
-            done <<< "$PLUGINS"
+            echo "### Locked plugins"
+            jq -r '.plugins[] | "- `\(.module)@\(.version)` — \(.purpose) (\(.license))"' config/plugins.lock.json
             echo
             echo "### Assets"
-            echo "- \`.deb\` for amd64, arm64, armv7, armv6, armv5, ppc64le, riscv64, s390x"
-            echo "- \`.tar.gz\` binaries for the same platforms"
+            echo "- \`.deb\` and \`.tar.gz\` for 8 Linux architectures"
             echo "- \`checksums.txt\` (SHA-256)"
+            echo "- \`sbom.cdx.json\` (CycloneDX, amd64 binary)"
+            echo "- \`plugins.lock.json\`, \`toolchain.json\`, \`build-matrix.json\`, \`build-info-*.txt\`"
             echo
-            echo "> The ARMv6 \`.deb\` is only distributed here. It is not part of the APT"
-            echo "> repository because upstream labels both ARMv6 and ARMv7 packages as"
-            echo "> Debian architecture \`armhf\`, so they cannot share one package index."
-            echo
-            echo "> This is an unofficial build. Plugin versions are not pinned and are resolved at build time."
+            echo "> ARMv6 is Release-only because upstream labels ARMv6 and ARMv7 as Debian \`armhf\`."
+            echo "> This is an unofficial build. Caddy is a trademark of Stack Holdings GmbH."
           } > release-notes.md
 
           upstream_body="$(gh api "repos/$UPSTREAM_REPO/releases/tags/$TAG" --jq .body || true)"
@@ -282,17 +339,24 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
           TAG: ${{ needs.resolve.outputs.tag }}
+          IS_LATEST: ${{ needs.resolve.outputs.is_latest }}
         run: |
           set -euo pipefail
           if gh release view "$TAG" --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1; then
             gh release upload "$TAG" release/* --repo "$GITHUB_REPOSITORY" --clobber
+            gh release edit "$TAG" --repo "$GITHUB_REPOSITORY" --latest="$IS_LATEST"
           else
             gh release create "$TAG" release/* \
               --repo "$GITHUB_REPOSITORY" \
               --title "$TAG" \
               --notes-file release-notes.md \
-              --latest
+              --latest="$IS_LATEST"
           fi
+
+      - name: Attest release assets
+        uses: actions/attest-build-provenance@v4.2.2
+        with:
+          subject-path: "release/*"
 
   pages:
     name: Publish APT repository
@@ -320,34 +384,37 @@ jobs:
             echo "exists=false" >> "$GITHUB_OUTPUT"
           fi
 
-      - name: Install apt-utils
+      - name: Install APT tools
         if: steps.release.outputs.exists == 'true'
         run: |
           sudo apt-get update -qq
-          sudo DEBIAN_FRONTEND=noninteractive apt-get install -y -qq apt-utils
+          sudo DEBIAN_FRONTEND=noninteractive apt-get install -y -qq apt-utils jq python3
 
-      - name: Import GPG signing key
+      - name: Import signing key
         if: steps.release.outputs.exists == 'true'
         env:
           GPG_PRIVATE_KEY: ${{ secrets.GPG_PRIVATE_KEY }}
+          GPG_KEY_FINGERPRINT: ${{ vars.GPG_KEY_FINGERPRINT }}
         run: |
           set -euo pipefail
-          if [ -z "${GPG_PRIVATE_KEY:-}" ]; then
-            echo "::error::Repository secret GPG_PRIVATE_KEY is not set. See README for setup."
-            exit 1
-          fi
+          [ -n "${GPG_PRIVATE_KEY:-}" ] || { echo "::error::Secret GPG_PRIVATE_KEY is not set"; exit 1; }
+          [ -n "${GPG_KEY_FINGERPRINT:-}" ] || { echo "::error::Variable GPG_KEY_FINGERPRINT is not set"; exit 1; }
           install -d -m 700 ~/.gnupg
           printf '%s' "$GPG_PRIVATE_KEY" | gpg --batch --import
-          gpg --list-secret-keys --keyid-format long
+          gpg --batch --list-secret-keys "$GPG_KEY_FINGERPRINT" >/dev/null \
+            || { echo "::error::The imported secret key does not match GPG_KEY_FINGERPRINT"; exit 1; }
 
-      - name: Build signed APT repository
+      - name: Build signed site
         if: steps.release.outputs.exists == 'true'
         env:
           GH_TOKEN: ${{ github.token }}
           TAG: ${{ needs.resolve.outputs.tag }}
+          KEEP_VERSIONS: ${{ needs.resolve.outputs.keep_versions }}
+          GPG_KEY_FINGERPRINT: ${{ vars.GPG_KEY_FINGERPRINT }}
         run: |
           set -euo pipefail
           bash .github/scripts/make-apt-repo.sh "$TAG" site "$KEEP_VERSIONS"
+          python3 .github/scripts/ci/check-site.py site
 
       - name: Configure Pages
         if: steps.release.outputs.exists == 'true'

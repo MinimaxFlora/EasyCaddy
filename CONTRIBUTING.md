@@ -19,10 +19,10 @@ fetches the upstream source at a release tag with `xcaddy` and repacks the offic
 
 Requirements:
 
-- Go (a version supported by the current Caddy release)
-- `xcaddy`
-- `dpkg-deb`, `curl`, `gzip`, `python3`
-- Optional: `lintian`, `actionlint`
+- Go `1.27.4` (see `config/toolchain.json`)
+- `xcaddy v0.4.7` (see `config/toolchain.json`)
+- `jq`, `dpkg-deb`, `curl`, `gzip`, `python3`
+- Optional: `shellcheck`, `yamllint`, `lintian`, `actionlint`
 
 ```bash
 git clone https://github.com/MinimaxFlora/EasyCaddy.git
@@ -35,19 +35,14 @@ Build a single architecture locally:
 ```bash
 go install github.com/caddyserver/xcaddy/cmd/xcaddy@v0.4.7
 mkdir -p dist
-GOOS=linux GOARCH=amd64 CGO_ENABLED=0 xcaddy build v2.11.9 \
-  --output dist/caddy \
-  --with github.com/caddy-dns/cloudflare \
-  --with github.com/caddy-dns/alidns \
-  --with github.com/caddy-dns/tencentcloud \
-  --with github.com/mholt/caddy-ratelimit \
-  --with github.com/greenpau/caddy-security \
-  --with github.com/mholt/caddy-l4 \
-  --with github.com/mholt/caddy-dynamicdns \
-  --with github.com/mholt/caddy-webdav \
-  --with github.com/caddyserver/cache-handler \
-  --with github.com/zhangjiayin/caddy-geoip2 \
-  --with github.com/WeidiDeng/caddy-cloudflare-ip
+tag="$(jq -r .verified_caddy config/plugins.lock.json)"
+args=()
+while IFS= read -r plugin; do
+  args+=(--with "$plugin")
+done < <(jq -r '.plugins[] | "\(.module)@\(.version)"' config/plugins.lock.json)
+GOOS=linux GOARCH=amd64 CGO_ENABLED=0 xcaddy build "$tag" \
+  --output dist/caddy "${args[@]}"
+python3 .github/scripts/ci/verify-build.py dist/caddy config/plugins.lock.json
 ```
 
 Repack it as a Debian package:
@@ -68,6 +63,7 @@ The repository site is a no-build static site. Keep the separation strict:
 - `pages/assets/site.css` — design tokens, layout, components and responsive rules.
 - `pages/assets/site.js` — theme toggle, navigation, tabs, copy buttons and scroll progress.
 - `pages/assets/theme.js` — the small pre-paint bootstrap that applies a stored light theme and the theme-color meta tag.
+- `pages/assets/field.js` — the optional hero canvas crawler effect; it pauses off-screen and becomes static under reduced motion.
 - `pages/assets/i18n.js` — the five-language dictionary and language switcher.
 - `pages/robots.txt` and `pages/sitemap.xml` — deployed with `@PAGES_BASE_URL@` replaced by `make-apt-repo.sh`.
 
@@ -82,16 +78,21 @@ Rules:
 ## Checks before opening a pull request
 
 ```bash
-# Shell syntax
-bash -n .github/scripts/*.sh pages/install.sh
+# All static checks (shell syntax, ShellCheck, actionlint, yamllint,
+# config consistency, secret scan and script modes)
+bash .github/scripts/ci/static-checks.sh
 
-# Workflow static analysis
-actionlint -color .github/workflows/build.yml
+# Configuration and site consistency
+python3 .github/scripts/ci/check-config.py
+python3 .github/scripts/ci/check-site.py site
 
-# Debian package policy
+# Debian package policy and contents
 lintian --display-info dist/caddy_2.11.9_linux_amd64.deb
+dpkg-deb -I dist/caddy_2.11.9_linux_amd64.deb
 
-# Configuration smoke test
+# Binary and module smoke test
+dist/caddy version
+dist/caddy list-modules
 dist/caddy validate --config Caddyfile --adapter caddyfile
 ```
 
@@ -104,14 +105,18 @@ gpg --verify Release.gpg Release
 
 ## Adding or changing plugins
 
-Edit the `PLUGINS` block at the top of `.github/workflows/build.yml`, one Go module path
-per line. Keep the list sorted by repository for easier review.
+Edit `config/plugins.lock.json`. Every entry needs the module path, an immutable version or
+pseudo-version, purpose, upstream URL, verified license, maintenance status,
+`caddy_compatibility` and at least one `smoke_modules` value.
 
 - Do **not** add modules already imported by Caddy's `modules/standard` packages; duplicate
   registration causes a startup panic.
-- Plugin versions are intentionally unpinned. If you pin a module, use a released tag or a
-  full commit hash and explain why in the pull request.
-- Update the plugin table and all four README files when the public plugin set changes.
+- Use a released tag or a full commit hash. Do not use a floating branch.
+- Update `THIRD_PARTY_NOTICES.md`, the page, the four README files, and the compatibility
+  note when the public plugin set changes.
+- Run the workflow with `force=true` for the current tag after merging a lock change.
+- If the lock changes the Caddy version, update `verified_caddy` and rebuild all
+  architectures before publishing.
 
 ## Manual workflow runs
 
@@ -127,9 +132,18 @@ tag already exists, the build is skipped unless `force` is enabled.
 
 ## Repository secrets
 
-`GPG_PRIVATE_KEY` holds the ASCII-armored APT signing key. Never commit it, paste it into an
-issue, or include it in logs. If the key is rotated, update the secret, commit the new
-`public.key`, and mention the new fingerprint in the pull request.
+`GPG_PRIVATE_KEY` holds the ASCII-armored APT signing key. `GPG_KEY_FINGERPRINT` is a
+repository variable containing the expected full fingerprint. Never commit or paste the
+private key into an issue or log. If the key is rotated, update both, commit the new
+`public.key`, update `SECURITY.md` and mention the new fingerprint in the pull request.
+The signing scripts abort if the secret key, the expected fingerprint and the committed
+public key disagree.
+
+Installer changes must be tested with a disposable VM or container. At minimum, run
+`install.sh --dry-run` and `uninstall.sh --dry-run` on Debian, then test a real install in
+an environment where losing `/etc/caddy` would not matter. Record the distribution and
+whether the systemd service actually became active; do not report a build-only result as a
+runtime pass.
 
 ## Commit and pull request guidelines
 

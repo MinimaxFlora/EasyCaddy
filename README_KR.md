@@ -104,6 +104,17 @@ apt-cache policy caddy
 Pages 사이트에는 최근 3개 버전이 유지됩니다. 더 오래된 `.deb`는 해당 GitHub Release에서
 내려받을 수 있습니다.
 
+### 제거 및 복원
+
+```bash
+curl -fsSL https://caddy.tatalvpai.vip/uninstall.sh | sudo bash
+```
+
+기본 동작은 패키지 제거(설정 purge 없음), EasyCaddy 소스/pin/keyring 제거, 설치 스크립트가
+백업한 파일 복원입니다. `/etc/caddy`, `/var/lib/caddy`, 인증서, 로그, 사이트 데이터는
+보존됩니다. `--dry-run`으로 미리 확인할 수 있습니다. 설정 삭제에는 `--purge`와 `--yes`가
+모두 필요합니다.
+
 ## 플러그인
 
 | 모듈 | 용도 |
@@ -120,10 +131,10 @@ Pages 사이트에는 최근 3개 버전이 유지됩니다. 더 오래된 `.deb
 | `github.com/zhangjiayin/caddy-geoip2` | GeoIP2 매처 |
 | `github.com/WeidiDeng/caddy-cloudflare-ip` | Cloudflare 뒤의 실제 클라이언트 IP 복원 |
 
-플러그인 버전은 **고정되지 않습니다**. 각 빌드에서 각 저장소의 기본 브랜치를 확인합니다
-(`--with github.com/caddy-dns/cloudflare`의 기본 동작과 같습니다). 재현 가능한 빌드가
-필요하면 `.github/workflows/build.yml`의 `PLUGINS`에 `@v1.2.3` 또는 `@<commit>`을
-추가하세요.
+플러그인 버전은 [`config/plugins.lock.json`](config/plugins.lock.json)에 고정되어 있으며,
+CI가 Caddy `v2.11.9`와의 조합을 검증합니다. 잠금 파일에는 용도, 업스트림, 라이선스,
+유지 관리 상태, 스모크 테스트 모듈도 기록됩니다. 변경 시 잠금 파일을 수정하고
+`force`로 다시 빌드하세요.
 
 ## 아키텍처
 
@@ -139,15 +150,16 @@ Debian 아키텍처 `armhf`로 표기하며, 이름, 버전, 아키텍처가 같
 
 1. `.github/workflows/build.yml`이 업스트림 최신 릴리스 태그(또는 `workflow_dispatch`로
    지정한 태그)를 확인합니다.
-2. 매트릭스 작업이 workflow의 `PLUGINS` 환경 변수에 있는 모듈로 8개 Linux 아키텍처에 대해
-   `xcaddy build`를 실행합니다.
-3. `.github/scripts/make-deb.sh`가 해당 공식 Caddy `.deb`를 내려받아 `/usr/bin/caddy`를
-   사용자 바이너리로 교체하고, Debian Policy 수정을 적용한 뒤 체크섬을 다시 계산해
-   패키징합니다.
-4. 릴리스 작업이 `.deb`, `.tar.gz`, SHA-256 체크섬을 포함한 GitHub Release를 게시합니다.
-5. `.github/scripts/make-apt-repo.sh`가 현재와 이전 2개 버전의 deb를 받아
-   `Packages` / `Packages.gz`를 생성하고, `Release`와 `InRelease`를 서명한 뒤 GitHub
-   Pages에 배포합니다.
+2. `config/build-matrix.json` 매트릭스가 `config/plugins.lock.json`의 고정 버전으로
+   8개 Linux 아키텍처에 대해 `xcaddy build`를 실행합니다.
+3. `.github/scripts/make-deb.sh`가 공식 `.deb`와 SHA-512를 검증하고,
+   `/usr/bin/caddy`를 교체하며 Debian Policy 수정, 빌드/플러그인 정보 기록, 체크섬
+   재계산을 수행합니다.
+4. 릴리스 작업이 `.deb`, `.tar.gz`, SHA-256, CycloneDX SBOM, 빌드 정보,
+   잠금/툴체인/매트릭스 파일을 GitHub Release로 게시합니다.
+5. `.github/scripts/make-apt-repo.sh`가 SemVer 기준으로 현재와 이전 버전을 유지하고,
+   모든 APT 아키텍처의 패키지 존재를 검증하며, `GPG_KEY_FINGERPRINT` 키로 서명해
+   GitHub Pages에 배포합니다.
 
 ## 저장소 구조
 
@@ -202,10 +214,11 @@ EasyCaddy Repository <easycaddy@users.noreply.github.com>
 - **특정 버전 빌드**: `upstream_version`에 `v2.11.9` 등을 입력합니다.
 - **기존 Release 강제 재빌드**: `force`를 선택합니다. Release 자산을 덮어쓰고 인덱스를
   다시 생성합니다.
-- **플러그인 추가**: `PLUGINS`에 한 줄에 하나의 모듈 경로를 추가합니다. Caddy 표준 빌드에
-  이미 포함된 모듈은 추가하지 마세요.
-- **보관 버전 수 변경**: `KEEP_VERSIONS`(기본 `3`)를 수정합니다. GitHub Pages에는 1 GB
-  소프트 제한이 있으며, 버전당 7개 패키지는 약 140 MB입니다.
+- **플러그인 추가/업데이트**: `config/plugins.lock.json`을 수정한 뒤 현재 tag를 `force`로
+  다시 빌드합니다. Caddy 표준 빌드에 이미 포함된 모듈은 추가하지 마세요.
+- **툴체인 고정/업데이트**: `config/toolchain.json`을 수정합니다.
+- **보관 버전 수 변경**: `config/build-matrix.json`의 `keep_versions`(기본 `3`)를
+  수정합니다. GitHub Pages에는 1 GB 소프트 제한이 있으며, 버전당 7개 패키지는 약 140 MB입니다.
 - **공개 URL 변경**: workflow의 `PAGES_BASE_URL`, `pages/install.sh`의 `BASE_URL`과 pin
   origin, Pages 사용자 도메인, 각 README의 링크를 함께 수정합니다.
 
@@ -249,7 +262,8 @@ artifact에 포함됩니다). `actionlint`, YAML 파싱, `bash -n`은
 ## 제한 사항
 
 - 비공식 빌드이며 어떠한 보증도 제공하지 않습니다. 프로덕션 환경에서는 먼저 테스트하세요.
-- 플러그인 버전은 빌드 시 확인되므로 기본적으로 재현 가능하지 않습니다.
+- 플러그인 버전은 고정되어 있지만 Go 바이너리의 완전한 재현성은 툴체인, 타임스탬프,
+  업스트림 빌드 환경에 따라 달라질 수 있습니다. 빌드 정보, 체크섬, SBOM을 제공합니다.
 - `caddy-geoip2`는 사용자가 MaxMind GeoLite2/GeoIP2 데이터베이스를 제공해야 합니다.
 - `greenpau/caddy-security`는 바이너리 크기와 빌드 시간을 크게 늘립니다.
 - 예약 실행은 업스트림에 **새** 릴리스 태그가 있을 때만 빌드합니다. 같은 태그의 Release가
