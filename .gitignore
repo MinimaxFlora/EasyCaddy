@@ -1,0 +1,8 @@
+.tmp/
+dist/
+site/
+release/
+*.deb
+*.tar.gz
+*.private.key
+easycaddy-private.key

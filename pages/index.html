@@ -1,0 +1,151 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>EasyCaddy APT 仓库</title>
+<style>
+  :root {
+    color-scheme: light dark;
+    --bg: #f7f7f5;
+    --panel: #ffffff;
+    --text: #1d1d1b;
+    --muted: #6b6b66;
+    --border: #e2e2dd;
+    --accent: #2f6f4f;
+    --accent-soft: #e8f1ec;
+    --code-bg: #f0f0ec;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #161615;
+      --panel: #1f1f1d;
+      --text: #ecece8;
+      --muted: #a0a09a;
+      --border: #33332f;
+      --accent: #7fc7a0;
+      --accent-soft: #23342b;
+      --code-bg: #26262a;
+    }
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--text);
+    font: 16px/1.6 -apple-system, BlinkMacSystemFont, "Segoe UI", "Noto Sans SC", "PingFang SC", "Microsoft YaHei", sans-serif;
+  }
+  main { max-width: 880px; margin: 0 auto; padding: 48px 20px 72px; }
+  header { margin-bottom: 32px; }
+  .eyebrow { color: var(--accent); font-size: 13px; font-weight: 600; letter-spacing: .08em; text-transform: uppercase; }
+  h1 { margin: 6px 0 10px; font-size: clamp(28px, 5vw, 40px); line-height: 1.15; letter-spacing: -.02em; }
+  .sub { color: var(--muted); margin: 0; max-width: 62ch; }
+  .badges { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 18px; }
+  .badge {
+    display: inline-flex; align-items: center; gap: 6px;
+    padding: 5px 11px; border-radius: 999px;
+    background: var(--accent-soft); color: var(--accent);
+    font-size: 13px; font-weight: 600;
+  }
+  .card {
+    background: var(--panel); border: 1px solid var(--border);
+    border-radius: 14px; padding: 22px 22px 18px; margin: 18px 0;
+  }
+  h2 { font-size: 17px; margin: 0 0 12px; letter-spacing: -.01em; }
+  p { margin: 0 0 12px; }
+  .muted { color: var(--muted); font-size: 14px; }
+  pre {
+    margin: 10px 0 14px; padding: 14px 16px; overflow-x: auto;
+    background: var(--code-bg); border-radius: 10px;
+    font: 13px/1.65 ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace;
+  }
+  code { font-family: inherit; }
+  a { color: var(--accent); text-decoration: none; }
+  a:hover { text-decoration: underline; }
+  .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 12px; }
+  .plugin { border: 1px solid var(--border); border-radius: 10px; padding: 12px 14px; background: var(--panel); }
+  .plugin code { display: block; font-size: 13px; word-break: break-all; margin-bottom: 4px; }
+  .plugin span { color: var(--muted); font-size: 13px; }
+  .links { display: flex; flex-wrap: wrap; gap: 16px; margin-top: 8px; font-size: 14px; }
+  footer { margin-top: 36px; color: var(--muted); font-size: 13px; border-top: 1px solid var(--border); padding-top: 18px; }
+  .warn { border-left: 3px solid #c98a1b; background: color-mix(in srgb, #c98a1b 10%, transparent); padding: 10px 14px; border-radius: 0 8px 8px 0; font-size: 14px; }
+</style>
+</head>
+<body>
+<main>
+  <header>
+    <div class="eyebrow">APT Repository</div>
+    <h1>EasyCaddy</h1>
+    <p class="sub">基于上游 Caddy 源码，加入 Cloudflare / 阿里云 / 腾讯云 DNS、限流、安全门户、四层代理、动态 DNS、WebDAV、缓存、GeoIP2 等插件的自用构建。</p>
+    <div class="badges">
+      <span class="badge">当前版本 v@VERSION@</span>
+      <span class="badge">更新时间 @DATE@</span>
+      <span class="badge">包名 caddy</span>
+    </div>
+  </header>
+
+  <section class="card">
+    <h2>一键安装</h2>
+    <pre><code>curl -fsSL @PAGES_BASE_URL@/install.sh | sudo bash</code></pre>
+    <p class="muted">脚本会安装签名公钥、写入 APT 源、停用官方 Caddy 源，然后安装 <code>caddy</code>。可重复执行以升级。</p>
+  </section>
+
+  <section class="card">
+    <h2>手动安装（与官方方式一致）</h2>
+    <pre><code>sudo apt install -y debian-keyring debian-archive-keyring apt-transport-https curl
+curl -1sLf '@PAGES_BASE_URL@/public.key' | sudo gpg --dearmor -o /usr/share/keyrings/easycaddy-archive-keyring.gpg
+echo "deb [signed-by=/usr/share/keyrings/easycaddy-archive-keyring.gpg] @PAGES_BASE_URL@/ ./" | sudo tee /etc/apt/sources.list.d/easycaddy.list
+sudo chmod o+r /usr/share/keyrings/easycaddy-archive-keyring.gpg
+sudo chmod o+r /etc/apt/sources.list.d/easycaddy.list
+sudo apt update
+sudo apt install caddy</code></pre>
+    <p class="muted">包版本形如 <code>@VERSION@-1+easycaddy</code>，排序高于官方同版本包，因此会替换官方安装而不冲突。</p>
+  </section>
+
+  <section class="card">
+    <h2>升级 / 降级</h2>
+    <pre><code>sudo apt update &amp;&amp; sudo apt install --only-upgrade caddy
+apt-cache policy caddy
+sudo apt install caddy=@VERSION@-1+easycaddy</code></pre>
+    <p class="muted">站点保留最近 3 个版本；更早版本可在 <a href="https://github.com/MinimaxFlora/EasyCaddy/releases">GitHub Releases</a> 下载 .deb。</p>
+  </section>
+
+  <section class="card">
+    <h2>内置插件</h2>
+    <div class="grid">
+      <div class="plugin"><code>caddy-dns/cloudflare</code><span>Cloudflare DNS-01</span></div>
+      <div class="plugin"><code>caddy-dns/alidns</code><span>阿里云 DNS-01</span></div>
+      <div class="plugin"><code>caddy-dns/tencentcloud</code><span>腾讯云 DNSPod DNS-01</span></div>
+      <div class="plugin"><code>mholt/caddy-ratelimit</code><span>请求限流 rate_limit</span></div>
+      <div class="plugin"><code>greenpau/caddy-security</code><span>认证门户 / MFA / OAuth</span></div>
+      <div class="plugin"><code>mholt/caddy-l4</code><span>四层 TCP/UDP 代理</span></div>
+      <div class="plugin"><code>mholt/caddy-dynamicdns</code><span>动态 DNS 更新</span></div>
+      <div class="plugin"><code>mholt/caddy-webdav</code><span>WebDAV 文件服务</span></div>
+      <div class="plugin"><code>caddyserver/cache-handler</code><span>HTTP 缓存</span></div>
+      <div class="plugin"><code>zhangjiayin/caddy-geoip2</code><span>GeoIP2 匹配器</span></div>
+      <div class="plugin"><code>WeidiDeng/caddy-cloudflare-ip</code><span>Cloudflare 真实客户端 IP</span></div>
+    </div>
+  </section>
+
+  <section class="card">
+    <h2>架构</h2>
+    <p>amd64 · arm64 · armv7 · armv6 · armv5 · ppc64le · riscv64 · s390x</p>
+    <p class="warn">官方 Caddy APT 源与本仓库使用同一个包名 <code>caddy</code>。请只保留一个源，或确认 <code>apt-cache policy caddy</code> 选中的是本仓库版本；否则上游更新时可能把带插件的构建覆盖掉。</p>
+  </section>
+
+  <section class="card">
+    <h2>相关链接</h2>
+    <div class="links">
+      <a href="https://github.com/MinimaxFlora/EasyCaddy">GitHub 仓库</a>
+      <a href="https://github.com/MinimaxFlora/EasyCaddy/releases">Release 下载</a>
+      <a href="https://github.com/caddyserver/caddy/releases">上游 Caddy</a>
+      <a href="https://caddyserver.com/docs/">Caddy 文档</a>
+    </div>
+  </section>
+
+  <footer>
+    EasyCaddy 是非官方构建。插件版本在构建时解析，未固定版本号。签名公钥指纹可在本页仓库根目录的 <code>public.key</code> 中核对。
+  </footer>
+</main>
+</body>
+</html>

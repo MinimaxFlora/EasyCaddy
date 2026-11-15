@@ -1,0 +1,343 @@
+name: Build Caddy with plugins
+
+on:
+  schedule:
+    # Every Monday 03:00 UTC. Change this if you want a different cadence.
+    - cron: "0 3 * * 1"
+  workflow_dispatch:
+    inputs:
+      upstream_version:
+        description: "Upstream Caddy tag to build (e.g. v2.11.9). Leave empty to use the latest upstream release."
+        required: false
+        default: ""
+      force:
+        description: "Rebuild even if a release with this tag already exists"
+        type: boolean
+        required: false
+        default: false
+
+permissions:
+  contents: write
+  pages: write
+  id-token: write
+
+concurrency:
+  group: build-caddy
+  cancel-in-progress: false
+
+env:
+  UPSTREAM_REPO: caddyserver/caddy
+  XCADDY_VERSION: v0.4.7
+  KEEP_VERSIONS: "3"
+  PAGES_BASE_URL: https://minimaxflora.github.io/EasyCaddy
+  PLUGINS: |
+    github.com/caddy-dns/cloudflare
+    github.com/caddy-dns/alidns
+    github.com/caddy-dns/tencentcloud
+    github.com/mholt/caddy-ratelimit
+    github.com/greenpau/caddy-security
+    github.com/mholt/caddy-l4
+    github.com/mholt/caddy-dynamicdns
+    github.com/mholt/caddy-webdav
+    github.com/caddyserver/cache-handler
+    github.com/zhangjiayin/caddy-geoip2
+    github.com/WeidiDeng/caddy-cloudflare-ip
+
+jobs:
+  resolve:
+    name: Resolve upstream version
+    runs-on: ubuntu-latest
+    outputs:
+      tag: ${{ steps.meta.outputs.tag }}
+      version: ${{ steps.meta.outputs.version }}
+      build: ${{ steps.meta.outputs.build }}
+    steps:
+      - name: Resolve tag
+        id: meta
+        env:
+          GH_TOKEN: ${{ github.token }}
+          INPUT_VERSION: ${{ inputs.upstream_version }}
+          FORCE: ${{ inputs.force }}
+        run: |
+          set -euo pipefail
+          if [ -n "$INPUT_VERSION" ]; then
+            tag="$INPUT_VERSION"
+          else
+            tag="$(gh api "repos/$UPSTREAM_REPO/releases/latest" --jq .tag_name)"
+          fi
+          if [[ ! "$tag" =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+            echo "::error::Invalid upstream tag '$tag' (expected vMAJOR.MINOR.PATCH)"
+            exit 1
+          fi
+          version="${tag#v}"
+
+          build=true
+          if gh release view "$tag" --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1; then
+            if [ "$FORCE" = "true" ]; then
+              echo "Release $tag already exists; rebuilding because force=true."
+            else
+              echo "Release $tag already exists; build will be skipped."
+              build=false
+            fi
+          fi
+
+          {
+            echo "tag=$tag"
+            echo "version=$version"
+            echo "build=$build"
+          } >> "$GITHUB_OUTPUT"
+          echo "Resolved upstream tag: $tag (build=$build)"
+
+  build:
+    name: Build ${{ matrix.asset }}
+    needs: resolve
+    if: needs.resolve.outputs.build == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 120
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - { goarch: amd64,   goarm: "",  asset: linux_amd64 }
+          - { goarch: arm64,   goarm: "",  asset: linux_arm64 }
+          - { goarch: arm,     goarm: "7", asset: linux_armv7 }
+          - { goarch: arm,     goarm: "6", asset: linux_armv6 }
+          - { goarch: arm,     goarm: "5", asset: linux_armv5 }
+          - { goarch: ppc64le, goarm: "",  asset: linux_ppc64le }
+          - { goarch: riscv64, goarm: "",  asset: linux_riscv64 }
+          - { goarch: s390x,   goarm: "",  asset: linux_s390x }
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: stable
+          cache: false
+
+      - name: Cache Go modules
+        uses: actions/cache@v4
+        with:
+          path: ~/go/pkg/mod
+          key: gomod-${{ runner.os }}-${{ needs.resolve.outputs.tag }}-${{ hashFiles('.github/workflows/build.yml') }}
+          restore-keys: |
+            gomod-${{ runner.os }}-${{ needs.resolve.outputs.tag }}-
+            gomod-${{ runner.os }}-
+
+      - name: Install xcaddy
+        run: |
+          set -euo pipefail
+          go install github.com/caddyserver/xcaddy/cmd/xcaddy@${XCADDY_VERSION}
+          echo "$(go env GOPATH)/bin" >> "$GITHUB_PATH"
+
+      - name: Build caddy binary
+        env:
+          TAG: ${{ needs.resolve.outputs.tag }}
+          TARGET_GOARCH: ${{ matrix.goarch }}
+          TARGET_GOARM: ${{ matrix.goarm }}
+        run: |
+          set -euo pipefail
+          args=()
+          while IFS= read -r plugin; do
+            [ -n "$plugin" ] && args+=(--with "$plugin")
+          done <<< "$PLUGINS"
+
+          mkdir -p dist
+          export GOOS=linux
+          export GOARCH="$TARGET_GOARCH"
+          export GOARM="$TARGET_GOARM"
+          export CGO_ENABLED=0
+
+          echo "Building Caddy $TAG for GOOS=$GOOS GOARCH=$GOARCH GOARM=${GOARM:-<none>}"
+          xcaddy build "$TAG" \
+            --output dist/caddy \
+            --ldflags "-s -w" \
+            "${args[@]}"
+
+          file dist/caddy
+          go version -m dist/caddy > "dist/build-info-${{ matrix.asset }}.txt"
+
+      - name: Package .deb
+        env:
+          TAG: ${{ needs.resolve.outputs.tag }}
+        run: |
+          set -euo pipefail
+          bash scripts/make-deb.sh "dist/caddy" "$TAG" "${{ matrix.asset }}" "dist"
+
+      - name: Package tarball
+        env:
+          TAG: ${{ needs.resolve.outputs.tag }}
+        run: |
+          set -euo pipefail
+          version="${TAG#v}"
+          staging="$(mktemp -d)"
+          install -m 0755 dist/caddy "$staging/caddy"
+          tar -C "$staging" -czf "dist/caddy_${version}_${{ matrix.asset }}.tar.gz" caddy
+          rm -rf "$staging"
+
+      - name: Checksums
+        run: |
+          set -euo pipefail
+          cd dist
+          sha256sum caddy_*.deb caddy_*.tar.gz | LC_ALL=C sort -k2 > "checksums-${{ matrix.asset }}.txt"
+
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: caddy-${{ matrix.asset }}
+          path: dist/*
+          if-no-files-found: error
+          retention-days: 7
+
+  release:
+    name: Publish GitHub release
+    needs: [resolve, build]
+    if: needs.resolve.outputs.build == 'true' && needs.build.result == 'success'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Download build artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: dist
+          pattern: caddy-*
+          merge-multiple: true
+
+      - name: Assemble release assets
+        env:
+          TAG: ${{ needs.resolve.outputs.tag }}
+        run: |
+          set -euo pipefail
+          mkdir -p release
+          cp dist/caddy_*.deb dist/caddy_*.tar.gz release/
+          cd release
+          sha256sum caddy_*.deb caddy_*.tar.gz | LC_ALL=C sort -k2 > checksums.txt
+          ls -lh
+
+      - name: Write release notes
+        env:
+          TAG: ${{ needs.resolve.outputs.tag }}
+        run: |
+          set -euo pipefail
+          version="${TAG#v}"
+          {
+            echo "Caddy **$TAG** built with extra third-party plugins."
+            echo
+            echo "- Upstream release: https://github.com/$UPSTREAM_REPO/releases/tag/$TAG"
+            echo "- APT repository: $PAGES_BASE_URL"
+            echo "- Install: see the repository README, or run \`curl -fsSL $PAGES_BASE_URL/install.sh | sudo bash\`"
+            echo
+            echo "### Plugins"
+            while IFS= read -r plugin; do
+              [ -n "$plugin" ] && echo "- \`$plugin\`"
+            done <<< "$PLUGINS"
+            echo
+            echo "### Assets"
+            echo "- \`.deb\` for amd64, arm64, armv7, armv6, armv5, ppc64le, riscv64, s390x"
+            echo "- \`.tar.gz\` binaries for the same platforms"
+            echo "- \`checksums.txt\` (SHA-256)"
+            echo
+            echo "> This is an unofficial build. Plugin versions are not pinned and are resolved at build time."
+          } > release-notes.md
+
+          upstream_body="$(gh api "repos/$UPSTREAM_REPO/releases/tags/$TAG" --jq .body || true)"
+          if [ -n "$upstream_body" ]; then
+            {
+              echo
+              echo "---"
+              echo
+              echo "## Upstream release notes"
+              echo
+              echo "$upstream_body"
+            } >> release-notes.md
+          fi
+
+      - name: Create or update release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ needs.resolve.outputs.tag }}
+        run: |
+          set -euo pipefail
+          if gh release view "$TAG" --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1; then
+            gh release upload "$TAG" release/* --repo "$GITHUB_REPOSITORY" --clobber
+          else
+            gh release create "$TAG" release/* \
+              --repo "$GITHUB_REPOSITORY" \
+              --title "$TAG" \
+              --notes-file release-notes.md \
+              --latest
+          fi
+
+  pages:
+    name: Publish APT repository
+    needs: [resolve, release]
+    if: always() && needs.resolve.result == 'success'
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Check release availability
+        id: release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ needs.resolve.outputs.tag }}
+        run: |
+          set -euo pipefail
+          if gh release view "$TAG" --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1; then
+            echo "exists=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "::warning::Release $TAG does not exist; nothing to publish."
+            echo "exists=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Install apt-utils
+        if: steps.release.outputs.exists == 'true'
+        run: |
+          sudo apt-get update -qq
+          sudo DEBIAN_FRONTEND=noninteractive apt-get install -y -qq apt-utils
+
+      - name: Import GPG signing key
+        if: steps.release.outputs.exists == 'true'
+        env:
+          GPG_PRIVATE_KEY: ${{ secrets.GPG_PRIVATE_KEY }}
+        run: |
+          set -euo pipefail
+          if [ -z "${GPG_PRIVATE_KEY:-}" ]; then
+            echo "::error::Repository secret GPG_PRIVATE_KEY is not set. See README for setup."
+            exit 1
+          fi
+          install -d -m 700 ~/.gnupg
+          printf '%s' "$GPG_PRIVATE_KEY" | gpg --batch --import
+          gpg --list-secret-keys --keyid-format long
+
+      - name: Build signed APT repository
+        if: steps.release.outputs.exists == 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ needs.resolve.outputs.tag }}
+        run: |
+          set -euo pipefail
+          bash scripts/make-apt-repo.sh "$TAG" site "$KEEP_VERSIONS"
+
+      - name: Configure Pages
+        if: steps.release.outputs.exists == 'true'
+        uses: actions/configure-pages@v5
+
+      - name: Upload Pages artifact
+        if: steps.release.outputs.exists == 'true'
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: site
+
+      - name: Deploy to GitHub Pages
+        if: steps.release.outputs.exists == 'true'
+        id: deployment
+        uses: actions/deploy-pages@v4
