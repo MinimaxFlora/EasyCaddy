@@ -20,7 +20,7 @@ REPO_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
 REPO="${GITHUB_REPOSITORY:-MinimaxFlora/EasyCaddy}"
 PAGES_BASE_URL="${PAGES_BASE_URL:-https://caddy.tatalvpai.vip}"
 MATRIX_FILE="${MATRIX_FILE:-$REPO_ROOT/config/build-matrix.json}"
-PUBLIC_KEY_FILE="${PUBLIC_KEY_FILE:-$REPO_ROOT/public.key}"
+PUBLIC_KEY_FILE="${PUBLIC_KEY_FILE:-}"
 LOCAL_DEB_DIR="${LOCAL_DEB_DIR:-}"
 GPG_KEY_FINGERPRINT="${GPG_KEY_FINGERPRINT:-}"
 
@@ -43,6 +43,7 @@ fi
 
 [[ "$GPG_KEY_FINGERPRINT" =~ ^[0-9A-Fa-f]{40}$ ]] \
   || die "GPG_KEY_FINGERPRINT must be a full 40-character fingerprint"
+[ -n "$PUBLIC_KEY_FILE" ] || die "PUBLIC_KEY_FILE is required (the CI job writes the GPG_PUBLIC_KEY secret to a temporary file)"
 [ -f "$PUBLIC_KEY_FILE" ] || die "public key not found: $PUBLIC_KEY_FILE"
 
 if ! gpg --batch --list-secret-keys "$GPG_KEY_FINGERPRINT" >/dev/null 2>&1; then
@@ -199,7 +200,8 @@ test -s "$SITE/assets/site.css" || die "site.css is missing"
 test -s "$SITE/assets/site.js"  || die "site.js is missing"
 test -s "$SITE/assets/i18n.js"  || die "i18n.js is missing"
 test -s "$SITE/assets/theme.js" || die "theme.js is missing"
-test -s "$SITE/assets/caddy.svg" || die "caddy.svg is missing"
+test -s "$SITE/assets/mascot.png" || die "mascot.png is missing"
+test -s "$SITE/assets/favicon.png" || die "favicon.png is missing"
 test -s "$SITE/robots.txt"      || die "robots.txt is missing"
 test -s "$SITE/sitemap.xml"     || die "sitemap.xml is missing"
 

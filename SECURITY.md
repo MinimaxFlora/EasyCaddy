@@ -46,10 +46,11 @@ The APT repository is signed by the key with fingerprint:
 5D07 1390 261F C2DE BE57  7C7B 129D C816 26FF 07EE
 ```
 
-The public key is committed as `public.key` and served at
-`https://caddy.tatalvpai.vip/public.key`. The CI verifies that the signing key
-matches the expected fingerprint in the `GPG_KEY_FINGERPRINT` repository
-variable. See the key rotation instructions in `README.md`.
+The public key is stored as the `GPG_PUBLIC_KEY` Actions secret and published at
+`https://caddy.tatalvpai.vip/public.key`; it is not committed to the repository.
+The CI verifies that the signing secret, public-key secret and the expected
+fingerprint in the `GPG_KEY_FINGERPRINT` repository variable agree. See the key
+rotation instructions in `README.md`.
 
 A key compromise should be reported privately. Key rotation changes the
 fingerprint and requires clients to re-import the keyring.

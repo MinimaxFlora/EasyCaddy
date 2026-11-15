@@ -11,15 +11,15 @@ the upstream Caddy release tag; entries are grouped by that version.
 - Pull request template, CODEOWNERS, Dependabot configuration and funding metadata.
 - English, Simplified Chinese, Japanese and Korean README files.
 - Multilingual landing page with Simplified Chinese, Traditional Chinese, English, Japanese and Korean, including automatic language detection, a switcher and `?lang=` support.
-- Redesigned landing page with the official Caddy logo as favicon and brand mark.
+- Redesigned landing page with a cartoon mascot as the brand mark, favicon and hero visual, plus an isometric traveling-field animation inspired by FlClash.
 - Split the site into semantic `pages/index.html`, `pages/assets/site.css`, `pages/assets/site.js`, `pages/assets/theme.js` and `pages/assets/i18n.js`; dark theme is now the default, with a pre-paint light-theme bootstrap.
 - Added `robots.txt`, `sitemap.xml`, structured data, canonical/hreflang metadata, a generated 1200×630 Open Graph card and a single theme-color source.
 - Local Caddy wordmark assets (`assets/caddy-light.svg`, `assets/caddy-dark.svg`) used in every README header.
-- Hero canvas crawler effect (`pages/assets/field.js`) with off-screen pause and reduced-motion fallback; the language button is now icon-only.
+- Isometric canvas field (`pages/assets/field.js`) with traveling capsules, off-screen pause and reduced-motion fallback; the language button is now icon-only.
 - Debian Policy quality checks and lintian overrides in the packaging script.
 - Authoritative `config/plugins.lock.json`, `config/build-matrix.json` and `config/toolchain.json`; CI verifies modules, architecture lists and docs against them.
 - Independent `ci.yml` with ShellCheck, actionlint, yamllint, config/secret checks, an amd64 package build, module smoke test and a signed APT test using a temporary key.
-- Explicit `GPG_KEY_FINGERPRINT` verification and a full-fingerprint signing path.
+- Explicit `GPG_KEY_FINGERPRINT` verification and a full-fingerprint signing path; the public key is stored as the `GPG_PUBLIC_KEY` secret and published by Pages instead of being committed.
 - `pages/uninstall.sh` with dry-run, source restoration and explicit purge.
 - SBOM, build info, lock/toolchain/matrix assets and build provenance attestation in releases.
 - `LICENSE`, `NOTICE`, `SECURITY.md`, `SUPPORT.md`, `THIRD_PARTY_NOTICES.md`, `docs/COMPATIBILITY.md` and `docs/AUDIT.md`.

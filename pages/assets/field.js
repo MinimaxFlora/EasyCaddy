@@ -1,7 +1,7 @@
 /* EasyCaddy hero field.
- * A lightweight, dependency-free canvas layer with slow diagonal crawlers.
- * It pauses when the hero is off-screen or the tab is hidden and becomes a
- * static composition under prefers-reduced-motion.
+ * An original isometric lattice with slow traveling capsules, inspired by the
+ * FlClash site's field visual. It is dependency-free, pauses off-screen, and
+ * draws a static composition under prefers-reduced-motion.
  */
 (function () {
   "use strict";
@@ -12,16 +12,17 @@
   if (!ctx) return;
 
   var reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)");
-  var palette = ["--accent-2", "--blue", "--violet", "--teal"];
+  var fieldVars = ["--field-1", "--field-2", "--field-3", "--field-4", "--field-5", "--field-6"];
   var width = 0;
   var height = 0;
   var dpr = 1;
-  var lanes = [];
-  var crawlers = [];
   var colors = [];
+  var lattice = [];
+  var capsules = [];
   var frameId = 0;
   var lastTime = 0;
   var onScreen = true;
+  var slope = Math.tan(Math.PI / 6); // 30 degrees
 
   function random(min, max) {
     return min + Math.random() * (max - min);
@@ -29,9 +30,14 @@
 
   function readColors() {
     var style = getComputedStyle(document.documentElement);
-    return palette.map(function (name) {
-      return style.getPropertyValue(name).trim() || "#7fa98b";
+    var values = fieldVars.map(function (name) {
+      return style.getPropertyValue(name).trim();
     });
+    return values.filter(Boolean);
+  }
+
+  function lineAt(x, offset, direction) {
+    return offset + direction * slope * x;
   }
 
   function build() {
@@ -43,69 +49,91 @@
     canvas.height = Math.round(height * dpr);
     ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
 
-    lanes = [];
-    var spacing = Math.max(26, Math.min(52, height / 11));
-    for (var y = spacing * 0.55; y < height + spacing; y += spacing) {
-      lanes.push({
-        y: y,
-        slope: random(-0.06, 0.06),
-        alpha: random(0.05, 0.1)
-      });
+    var spacing = Math.max(24, Math.min(46, width * 0.032));
+    lattice = [];
+    for (var offset = -width * slope - spacing; offset < height + spacing; offset += spacing) {
+      lattice.push({ offset: offset, direction: 1 });
+    }
+    for (var cross = -height; cross < height + width * slope + spacing; cross += spacing) {
+      lattice.push({ offset: cross, direction: -1 });
     }
 
-    crawlers = [];
-    var count = Math.max(10, Math.round(width / 120) + 8);
+    capsules = [];
+    var count = Math.max(14, Math.round(width / 105) + 8);
     for (var i = 0; i < count; i += 1) {
-      crawlers.push(makeCrawler(true));
+      capsules.push(makeCapsule(true));
     }
   }
 
-  function makeCrawler(initial) {
-    var lane = lanes[Math.floor(Math.random() * lanes.length)];
+  function makeCapsule(initial) {
+    var direction = Math.random() < 0.75 ? 1 : -1;
+    var laneOffset = direction === 1
+      ? random(-height * 0.3, height + height * 0.2)
+      : random(-height * 0.4, height);
     return {
-      lane: lane,
-      x: initial ? random(0, width) : -random(40, 260),
-      length: random(60, 190),
-      speed: random(12, 42),
-      alpha: random(0.18, 0.38),
+      direction: direction,
+      offset: laneOffset,
+      x: initial ? random(-width * 0.1, width * 1.1) : (direction === 1 ? -random(40, 220) : width + random(40, 220)),
+      length: random(42, 176),
+      speed: random(11, 38),
+      alpha: random(0.28, 0.58),
       lineWidth: random(1.2, 2.8),
-      color: colors[Math.floor(Math.random() * colors.length)]
+      color: colors[Math.floor(Math.random() * colors.length)] || "#a2b09b",
+      wobble: random(0.5, 1.8),
+      phase: random(0, Math.PI * 2)
     };
   }
 
-  function draw(dt) {
+  function draw(time, dt) {
     ctx.clearRect(0, 0, width, height);
     ctx.lineCap = "round";
 
-    for (var l = 0; l < lanes.length; l += 1) {
-      var lane = lanes[l];
-      ctx.globalAlpha = lane.alpha;
-      ctx.strokeStyle = colors[1] || "#7fa98b";
+    // Faint isometric lattice.
+    for (var i = 0; i < lattice.length; i += 1) {
+      var lane = lattice[i];
+      ctx.globalAlpha = 0.07;
+      ctx.strokeStyle = colors[3] || colors[4] || "#a2b09b";
       ctx.lineWidth = 1;
       ctx.beginPath();
-      ctx.moveTo(0, lane.y);
-      ctx.lineTo(width, lane.y + lane.slope * width);
+      ctx.moveTo(0, lane.offset);
+      ctx.lineTo(width, lane.offset + lane.direction * slope * width);
       ctx.stroke();
     }
 
-    for (var i = 0; i < crawlers.length; i += 1) {
-      var crawler = crawlers[i];
-      if (!crawler.lane) continue;
-      crawler.x += crawler.speed * dt;
-      if (crawler.x > width + crawler.length + 20) {
-        crawlers[i] = makeCrawler(false);
+    // Traveling capsules along the +30 degree lanes.
+    for (var c = 0; c < capsules.length; c += 1) {
+      var capsule = capsules[c];
+      var direction = capsule.direction;
+      capsule.x += direction * capsule.speed * (dt / 0.016);
+      if (direction === 1 && capsule.x > width + capsule.length + 40) {
+        capsules[c] = makeCapsule(false);
         continue;
       }
-      var lane = crawler.lane;
-      var startX = crawler.x;
-      var startY = lane.y + lane.slope * startX;
-      var endX = startX + crawler.length;
-      var endY = lane.y + lane.slope * endX;
-      ctx.globalAlpha = crawler.alpha;
-      ctx.strokeStyle = crawler.color || colors[0] || "#7fa98b";
-      ctx.lineWidth = crawler.lineWidth;
+      if (direction === -1 && capsule.x < -capsule.length - 40) {
+        capsules[c] = makeCapsule(false);
+        continue;
+      }
+
+      var wobble = 1 + 0.16 * Math.sin(time * 0.001 * capsule.wobble + capsule.phase);
+      var length = capsule.length * wobble;
+      var startX = capsule.x;
+      var startY = lineAt(startX, capsule.offset, direction);
+      var endX = startX + direction * length;
+      var endY = lineAt(endX, capsule.offset, direction);
+
+      ctx.globalAlpha = capsule.alpha;
+      ctx.strokeStyle = capsule.color;
+      ctx.lineWidth = capsule.lineWidth;
       ctx.beginPath();
       ctx.moveTo(startX, startY);
+      ctx.lineTo(endX, endY);
+      ctx.stroke();
+
+      // A slightly brighter head makes the motion readable without a glow.
+      ctx.globalAlpha = Math.min(0.7, capsule.alpha + 0.16);
+      ctx.lineWidth = capsule.lineWidth * 0.85;
+      ctx.beginPath();
+      ctx.moveTo(endX - direction * 3, endY - direction * slope * 3);
       ctx.lineTo(endX, endY);
       ctx.stroke();
     }
@@ -116,7 +144,7 @@
     if (!lastTime) lastTime = time;
     var dt = Math.min(0.05, (time - lastTime) / 1000);
     lastTime = time;
-    draw(dt);
+    draw(time, dt);
     frameId = window.requestAnimationFrame(frame);
   }
 
@@ -134,7 +162,7 @@
   function redraw() {
     colors = readColors();
     build();
-    draw(0);
+    draw(performance.now(), 0);
   }
 
   if (typeof window.ResizeObserver === "function") {
@@ -159,7 +187,10 @@
 
   new MutationObserver(function () {
     colors = readColors();
-    if (reduceMotion.matches) draw(0);
+    for (var i = 0; i < capsules.length; i += 1) {
+      capsules[i].color = colors[Math.floor(Math.random() * colors.length)] || capsules[i].color;
+    }
+    if (reduceMotion.matches) draw(performance.now(), 0);
   }).observe(document.documentElement, { attributes: true, attributeFilter: ["data-theme"] });
 
   reduceMotion.addEventListener("change", function () {
@@ -173,6 +204,6 @@
 
   colors = readColors();
   build();
-  draw(0);
+  draw(performance.now(), 0);
   start();
 })();

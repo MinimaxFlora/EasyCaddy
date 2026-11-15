@@ -132,12 +132,12 @@ tag already exists, the build is skipped unless `force` is enabled.
 
 ## Repository secrets
 
-`GPG_PRIVATE_KEY` holds the ASCII-armored APT signing key. `GPG_KEY_FINGERPRINT` is a
-repository variable containing the expected full fingerprint. Never commit or paste the
-private key into an issue or log. If the key is rotated, update both, commit the new
-`public.key`, update `SECURITY.md` and mention the new fingerprint in the pull request.
-The signing scripts abort if the secret key, the expected fingerprint and the committed
-public key disagree.
+`GPG_PRIVATE_KEY` and `GPG_PUBLIC_KEY` hold the ASCII-armored signing key pair.
+`GPG_KEY_FINGERPRINT` is a repository variable containing the expected full fingerprint.
+Never commit or paste the private key into an issue or log. If the key is rotated, update
+all three, update `SECURITY.md` and mention the new fingerprint in the pull request.
+The signing scripts abort if the secret key, the public-key secret and the expected
+fingerprint disagree.
 
 Installer changes must be tested with a disposable VM or container. At minimum, run
 `install.sh --dry-run` and `uninstall.sh --dry-run` on Debian, then test a real install in

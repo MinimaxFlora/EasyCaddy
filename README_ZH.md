@@ -179,12 +179,13 @@ pages/assets/site.css              页面设计变量与组件样式
 pages/assets/site.js               主题、导航、标签页与复制交互
 pages/assets/theme.js              首屏前的主题引导
 pages/assets/i18n.js               五语言翻译
-pages/assets/caddy.svg             favicon 与品牌图标
+pages/assets/mascot.png            品牌卡通图标
+pages/assets/favicon.png           64×64 favicon
 pages/assets/og.png                1200×630 Open Graph 分享图
 pages/install.sh                   用户安装脚本
+pages/uninstall.sh                 安全卸载/恢复脚本
 pages/robots.txt                   爬虫策略
 pages/sitemap.xml                  搜索引擎站点地图
-public.key                         APT 仓库签名公钥
 README.md / README_ZH.md / README_JA.md / README_KR.md
 CONTRIBUTING.md                    贡献指南
 CHANGELOG.md                       版本历史
@@ -192,19 +193,25 @@ CHANGELOG.md                       版本历史
 
 ## 仓库维护
 
-签名公钥已提交为 `public.key`：
+签名密钥指纹：
 
 ```text
 5D07 1390 261F C2DE BE57  7C7B 129D C816 26FF 07EE
 EasyCaddy Repository <easycaddy@users.noreply.github.com>
 ```
 
+公钥不再提交到仓库，而是保存为 Actions secret `GPG_PUBLIC_KEY`，由 Pages 任务发布到
+`https://caddy.tatalvpai.vip/public.key`，并在每次部署时与私钥和指纹核对。
+
 1. 把私钥写入 Actions secret `GPG_PRIVATE_KEY`。密钥没有 passphrase，请离线备份，且不要提交到仓库。
-2. 在 **Settings → Pages → Build and deployment** 选择 **GitHub Actions**，自定义域名填
+2. 把 ASCII-armored 公钥写入 Actions secret `GPG_PUBLIC_KEY`。
+3. 把完整指纹写入 repository variable `GPG_KEY_FINGERPRINT`。私钥、公钥和指纹任一不匹配，
+   Pages 任务都会拒绝签名。
+4. 在 **Settings → Pages → Build and deployment** 选择 **GitHub Actions**，自定义域名填
    `caddy.tatalvpai.vip`。
-3. 在 Cloudflare 为 `caddy.tatalvpai.vip` 添加指向 `minimaxflora.github.io` 的 `CNAME`
+5. 在 Cloudflare 为 `caddy.tatalvpai.vip` 添加指向 `minimaxflora.github.io` 的 `CNAME`
    记录。GitHub 签发 TLS 证书期间建议使用仅 DNS（灰云）模式，证书就绪后再考虑开启代理。
-4. 运行一次 **Actions → Build Caddy with plugins → Run workflow**。
+6. 运行一次 **Actions → Build Caddy with plugins → Run workflow**。
 
 手动操作：
 
@@ -235,8 +242,9 @@ gpg --armor --export-secret-keys easycaddy@users.noreply.github.com > easycaddy-
 gpg --armor --export easycaddy@users.noreply.github.com > public.key
 ```
 
-更新 `GPG_PRIVATE_KEY` secret、提交新的 `public.key`，然后重新运行 workflow。已安装的机器
-需要重新下载公钥并更新 `signed-by` keyring。
+更新 `GPG_PRIVATE_KEY`、`GPG_PUBLIC_KEY` secret 和 `GPG_KEY_FINGERPRINT` variable，然后重新
+运行 workflow。Pages 任务会重新发布新的公钥。已安装的机器需要重新下载公钥并更新
+`signed-by` keyring。
 
 ## 质量检查
 

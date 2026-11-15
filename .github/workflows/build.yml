@@ -9,7 +9,6 @@ on:
       - "assets/**"
       - ".github/scripts/**"
       - ".github/workflows/build.yml"
-      - "public.key"
   schedule:
     - cron: "0 3 * * 1"
   workflow_dispatch:
@@ -279,7 +278,6 @@ jobs:
           cp dist/caddy_*.deb dist/caddy_*.tar.gz release/
           cp dist/build-info-*.txt dist/checksums-*.txt release/
           cp config/plugins.lock.json config/toolchain.json config/build-matrix.json release/
-          cp public.key release/
 
           # SBOM for the amd64 binary, using the pinned Syft version.
           syft_version="$(jq -r .syft config/toolchain.json)"
@@ -394,15 +392,22 @@ jobs:
         if: steps.release.outputs.exists == 'true'
         env:
           GPG_PRIVATE_KEY: ${{ secrets.GPG_PRIVATE_KEY }}
+          GPG_PUBLIC_KEY: ${{ secrets.GPG_PUBLIC_KEY }}
           GPG_KEY_FINGERPRINT: ${{ vars.GPG_KEY_FINGERPRINT }}
         run: |
           set -euo pipefail
           [ -n "${GPG_PRIVATE_KEY:-}" ] || { echo "::error::Secret GPG_PRIVATE_KEY is not set"; exit 1; }
+          [ -n "${GPG_PUBLIC_KEY:-}" ] || { echo "::error::Secret GPG_PUBLIC_KEY is not set"; exit 1; }
           [ -n "${GPG_KEY_FINGERPRINT:-}" ] || { echo "::error::Variable GPG_KEY_FINGERPRINT is not set"; exit 1; }
           install -d -m 700 ~/.gnupg
           printf '%s' "$GPG_PRIVATE_KEY" | gpg --batch --import
+          printf '%s\n' "$GPG_PUBLIC_KEY" > "$RUNNER_TEMP/public.key"
           gpg --batch --list-secret-keys "$GPG_KEY_FINGERPRINT" >/dev/null \
             || { echo "::error::The imported secret key does not match GPG_KEY_FINGERPRINT"; exit 1; }
+          actual="$(gpg --batch --show-keys --with-colons "$RUNNER_TEMP/public.key" \
+            | awk -F: '/^fpr:/{print toupper($10); exit}')"
+          [ "$actual" = "${GPG_KEY_FINGERPRINT^^}" ] \
+            || { echo "::error::Secret GPG_PUBLIC_KEY does not match GPG_KEY_FINGERPRINT"; exit 1; }
 
       - name: Build signed site
         if: steps.release.outputs.exists == 'true'
@@ -411,6 +416,7 @@ jobs:
           TAG: ${{ needs.resolve.outputs.tag }}
           KEEP_VERSIONS: ${{ needs.resolve.outputs.keep_versions }}
           GPG_KEY_FINGERPRINT: ${{ vars.GPG_KEY_FINGERPRINT }}
+          PUBLIC_KEY_FILE: ${{ runner.temp }}/public.key
         run: |
           set -euo pipefail
           bash .github/scripts/make-apt-repo.sh "$TAG" site "$KEEP_VERSIONS"

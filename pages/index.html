@@ -27,7 +27,8 @@
 <meta property="og:image:alt" content="EasyCaddy — Caddy with the plugins you actually need">
 <meta name="twitter:card" content="summary_large_image">
 <meta name="twitter:image" content="@PAGES_BASE_URL@/assets/og.png">
-<link rel="icon" href="assets/caddy.svg" type="image/svg+xml">
+<link rel="icon" href="assets/favicon.png" type="image/png">
+<link rel="apple-touch-icon" href="assets/mascot.png">
 <link rel="stylesheet" href="assets/site.css">
 <script src="assets/theme.js"></script>
 <script type="application/ld+json">
@@ -42,7 +43,7 @@
   <div class="wrap nav-inner">
     <a class="brand" href="#top" aria-label="EasyCaddy 首页">
       <span class="brand-mark" aria-hidden="true">
-        <img src="assets/caddy.svg" alt="" width="30" height="30">
+        <img src="assets/mascot.png" alt="" width="30" height="30">
       </span>
       <span>EasyCaddy</span>
     </a>
@@ -113,15 +114,16 @@
 
     <div class="hero-grid">
       <div class="hero-copy">
+        <h1 class="sr">EasyCaddy — unofficial Caddy builds with extra plugins</h1>
         <a class="eyebrow" href="#security">
           <span class="dot" aria-hidden="true"></span>
           <span data-i18n="hero.eyebrow">GPG 签名 APT 仓库 · 自动跟随上游</span>
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
         </a>
 
-        <h1 class="display"><span data-i18n="hero.title1">Caddy，</span><br><span class="grad" data-i18n="hero.title2">开箱即用。</span></h1>
-
-        <p class="lede" data-i18n="hero.lede">基于上游最新源码，内置 DNS、限流、安全门户、四层代理、WebDAV、缓存与 GeoIP2。签名 APT 仓库，一条命令安装。</p>
+        <div class="hero-mascot">
+          <img src="assets/mascot.png" alt="EasyCaddy mascot" width="512" height="512" loading="eager" decoding="async">
+        </div>
 
         <div class="cta">
           <a class="btn primary" href="#install">
@@ -407,7 +409,7 @@ dpkg-query -W -f='${Version}\n' caddy</pre>
         <code class="fp">5D07 1390 261F C2DE BE57<br>7C7B 129D C816 26FF 07EE</code>
         <div class="fp-actions">
           <button class="copy" type="button" data-copy="5D07 1390 261F C2DE BE57 7C7B 129D C816 26FF 07EE" data-i18n="security.copyFp">复制指纹</button>
-          <a class="copy fp-link" href="https://github.com/MinimaxFlora/EasyCaddy/blob/master/public.key" target="_blank" rel="noreferrer noopener" data-i18n="security.viewKey">查看公钥</a>
+          <a class="copy fp-link" href="@PAGES_BASE_URL@/public.key" target="_blank" rel="noreferrer noopener" data-i18n="security.viewKey">查看公钥</a>
         </div>
         <pre><code>curl -fsSL @PAGES_BASE_URL@/public.key | gpg --show-keys
 gpg --verify InRelease</code></pre>
@@ -456,7 +458,7 @@ gpg --verify InRelease</code></pre>
     <div class="footer-brand">
       <a class="brand" href="#top">
         <span class="brand-mark" aria-hidden="true">
-          <img src="assets/caddy.svg" alt="" width="30" height="30">
+          <img src="assets/mascot.png" alt="" width="30" height="30">
         </span>
         <span>EasyCaddy</span>
       </a>

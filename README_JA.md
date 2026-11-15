@@ -182,12 +182,13 @@ pages/assets/site.css              デザイントークンとコンポーネン
 pages/assets/site.js               テーマ、ナビ、タブ、コピー操作
 pages/assets/theme.js              初回描画前のテーマ初期化
 pages/assets/i18n.js               5 言語の翻訳
-pages/assets/caddy.svg             favicon とブランドアイコン
+pages/assets/mascot.png            ブランド用マスコット
+pages/assets/favicon.png           64×64 favicon
 pages/assets/og.png                1200×630 Open Graph 共有画像
 pages/install.sh                   ユーザー向けインストーラー
+pages/uninstall.sh                 安全なアンインストール/復元
 pages/robots.txt                   クローラーポリシー
 pages/sitemap.xml                  サイトマップ
-public.key                         APT リポジトリ署名用公開鍵
 README.md / README_ZH.md / README_JA.md / README_KR.md
 CONTRIBUTING.md                    コントリビューションガイド
 CHANGELOG.md                       リリース履歴
@@ -195,21 +196,27 @@ CHANGELOG.md                       リリース履歴
 
 ## リポジトリのメンテナンス
 
-署名用公開鍵は `public.key` としてコミットされています:
+署名鍵のフィンガープリント:
 
 ```text
 5D07 1390 261F C2DE BE57  7C7B 129D C816 26FF 07EE
 EasyCaddy Repository <easycaddy@users.noreply.github.com>
 ```
 
+公開鍵はリポジトリにコミットせず、Actions secret `GPG_PUBLIC_KEY` に保存し、Pages が
+`https://caddy.tatalvpai.vip/public.key` として公開します。各デプロイで秘密鍵・公開鍵・
+フィンガープリントを照合します。
+
 1. 秘密鍵を Actions secret `GPG_PRIVATE_KEY` に登録します。パスフレーズはなく、オフラインで
    バックアップしてください。リポジトリには絶対にコミットしないでください。
-2. **Settings → Pages → Build and deployment** で **GitHub Actions** を選択し、
+2. ASCII-armored 公開鍵を Actions secret `GPG_PUBLIC_KEY` に登録します。
+3. 完全なフィンガープリントを repository variable `GPG_KEY_FINGERPRINT` に登録します。
+4. **Settings → Pages → Build and deployment** で **GitHub Actions** を選択し、
    カスタムドメインに `caddy.tatalvpai.vip` を設定します。
-3. Cloudflare で `caddy.tatalvpai.vip` から `minimaxflora.github.io` への `CNAME` レコードを
+5. Cloudflare で `caddy.tatalvpai.vip` から `minimaxflora.github.io` への `CNAME` レコードを
    作成します。GitHub が TLS 証明書を発行する間は DNS のみ（グレークラウド）にし、
    完了後にプロキシを有効にできます。
-4. **Actions → Build Caddy with plugins → Run workflow** を一度実行します。
+6. **Actions → Build Caddy with plugins → Run workflow** を一度実行します。
 
 手動操作:
 
@@ -242,9 +249,9 @@ gpg --armor --export-secret-keys easycaddy@users.noreply.github.com > easycaddy-
 gpg --armor --export easycaddy@users.noreply.github.com > public.key
 ```
 
-`GPG_PRIVATE_KEY` secret を更新し、新しい `public.key` をコミットして workflow を再実行します。
-既存のインストール環境では新しい鍵をダウンロードし、`signed-by` の keyring を更新する必要が
-あります。
+`GPG_PRIVATE_KEY` と `GPG_PUBLIC_KEY` secret、`GPG_KEY_FINGERPRINT` variable を更新して
+workflow を再実行します。Pages が新しい公開鍵を再公開します。既存のインストール環境では
+新しい鍵をダウンロードし、`signed-by` の keyring を更新する必要があります。
 
 ## 品質チェック
 

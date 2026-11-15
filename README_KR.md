@@ -180,12 +180,13 @@ pages/assets/site.css              디자인 토큰과 컴포넌트 스타일
 pages/assets/site.js               테마, 탐색, 탭, 복사 상호작용
 pages/assets/theme.js              첫 렌더링 전 테마 초기화
 pages/assets/i18n.js               5개 언어 번역
-pages/assets/caddy.svg             favicon 및 브랜드 아이콘
+pages/assets/mascot.png            브랜드 마스코트
+pages/assets/favicon.png           64×64 favicon
 pages/assets/og.png                1200×630 Open Graph 공유 이미지
 pages/install.sh                   사용자 설치 스크립트
+pages/uninstall.sh                 안전한 제거/복원 스크립트
 pages/robots.txt                   크롤러 정책
 pages/sitemap.xml                  사이트맵
-public.key                         APT 저장소 서명 공개 키
 README.md / README_ZH.md / README_JA.md / README_KR.md
 CONTRIBUTING.md                    기여 가이드
 CHANGELOG.md                       릴리스 기록
@@ -193,21 +194,27 @@ CHANGELOG.md                       릴리스 기록
 
 ## 저장소 유지 관리
 
-서명 공개 키는 `public.key`로 커밋되어 있습니다:
+서명 키 지문:
 
 ```text
 5D07 1390 261F C2DE BE57  7C7B 129D C816 26FF 07EE
 EasyCaddy Repository <easycaddy@users.noreply.github.com>
 ```
 
+공개 키는 저장소에 커밋하지 않고 Actions secret `GPG_PUBLIC_KEY`에 저장하며, Pages가
+`https://caddy.tatalvpai.vip/public.key`로 게시합니다. 배포 시 개인 키, 공개 키, 지문을
+모두 대조합니다.
+
 1. 개인 키를 Actions secret `GPG_PRIVATE_KEY`에 등록합니다. passphrase가 없으므로 오프라인
    백업을 보관하고 절대 저장소에 커밋하지 마세요.
-2. **Settings → Pages → Build and deployment**에서 **GitHub Actions**를 선택하고 사용자
+2. ASCII-armored 공개 키를 Actions secret `GPG_PUBLIC_KEY`에 등록합니다.
+3. 전체 지문을 repository variable `GPG_KEY_FINGERPRINT`에 등록합니다.
+4. **Settings → Pages → Build and deployment**에서 **GitHub Actions**를 선택하고 사용자
    도메인을 `caddy.tatalvpai.vip`로 설정합니다.
-3. Cloudflare에서 `caddy.tatalvpai.vip`가 `minimaxflora.github.io`를 가리키는 `CNAME`
+5. Cloudflare에서 `caddy.tatalvpai.vip`가 `minimaxflora.github.io`를 가리키는 `CNAME`
    레코드를 만듭니다. GitHub가 TLS 인증서를 발급하는 동안에는 DNS 전용(회색 구름) 모드를
    사용하고, 완료 후 프록시를 켤 수 있습니다.
-4. **Actions → Build Caddy with plugins → Run workflow**를 한 번 실행합니다.
+6. **Actions → Build Caddy with plugins → Run workflow**를 한 번 실행합니다.
 
 수동 작업:
 
@@ -239,8 +246,9 @@ gpg --armor --export-secret-keys easycaddy@users.noreply.github.com > easycaddy-
 gpg --armor --export easycaddy@users.noreply.github.com > public.key
 ```
 
-`GPG_PRIVATE_KEY` secret을 갱신하고 새 `public.key`를 커밋한 뒤 workflow를 다시 실행합니다.
-기존 설치 환경은 새 키를 내려받아 `signed-by` keyring을 갱신해야 합니다.
+`GPG_PRIVATE_KEY`와 `GPG_PUBLIC_KEY` secret, `GPG_KEY_FINGERPRINT` variable을 갱신한 뒤
+workflow를 다시 실행합니다. Pages가 새 공개 키를 다시 게시합니다. 기존 설치 환경은 새 키를
+내려받아 `signed-by` keyring을 갱신해야 합니다.
 
 ## 품질 검사
 

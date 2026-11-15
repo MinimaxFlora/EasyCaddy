@@ -198,13 +198,13 @@ pages/assets/site.js               Theme, navigation, tabs and copy interactions
 pages/assets/theme.js              Pre-paint theme bootstrap
 pages/assets/field.js              Hero canvas crawler effect
 pages/assets/i18n.js               Five-language translations
-pages/assets/caddy.svg             Favicon and brand icon
+pages/assets/mascot.png            Cartoon mascot used as the brand icon
+pages/assets/favicon.png           64px browser favicon
 pages/assets/og.png                1200x630 Open Graph share card
 pages/install.sh                   User installer
 pages/uninstall.sh                 Safe uninstall/restore script
 pages/robots.txt                   Crawler policy
 pages/sitemap.xml                  Search-engine sitemap
-public.key                         APT repository signing public key
 LICENSE / NOTICE                   Project license and trademark notice
 SECURITY.md / SUPPORT.md           Security and support policy
 THIRD_PARTY_NOTICES.md             Direct module licenses
@@ -216,24 +216,29 @@ CHANGELOG.md                       Release history
 
 ## Repository maintenance
 
-The signing public key is committed as `public.key`:
+The signing key fingerprint is:
 
 ```text
 5D07 1390 261F C2DE BE57  7C7B 129D C816 26FF 07EE
 EasyCaddy Repository <easycaddy@users.noreply.github.com>
 ```
 
+The public key is not committed to the repository. It is stored as the
+`GPG_PUBLIC_KEY` Actions secret, published by the Pages job at
+`https://caddy.tatalvpai.vip/public.key`, and checked against the signing key on every
+deployment.
+
 1. Add the private key as the `GPG_PRIVATE_KEY` Actions secret. The key has no
    passphrase; keep an offline backup and never commit it.
-2. Add the public fingerprint as the `GPG_KEY_FINGERPRINT` repository **variable**.
-   The Pages job refuses to sign if the imported secret key and committed `public.key`
-   do not match this fingerprint.
-3. In **Settings → Pages → Build and deployment**, choose **GitHub Actions** as the
+2. Add the ASCII-armored public key as the `GPG_PUBLIC_KEY` Actions secret.
+3. Add the public fingerprint as the `GPG_KEY_FINGERPRINT` repository **variable**.
+   The Pages job refuses to sign if the secret key, public key and fingerprint disagree.
+4. In **Settings → Pages → Build and deployment**, choose **GitHub Actions** as the
    source and set the custom domain to `caddy.tatalvpai.vip`.
-4. Create a DNS `CNAME` record for `caddy.tatalvpai.vip` pointing to
+5. Create a DNS `CNAME` record for `caddy.tatalvpai.vip` pointing to
    `minimaxflora.github.io`. Use DNS-only mode (grey cloud) while GitHub provisions the
    TLS certificate; proxying can be enabled afterwards.
-5. Run **Actions → Build Caddy with plugins → Run workflow** once.
+6. Run **Actions → Build Caddy with plugins → Run workflow** once.
 
 Manual controls:
 
@@ -267,10 +272,11 @@ gpg --armor --export-secret-keys easycaddy@users.noreply.github.com > easycaddy-
 gpg --armor --export easycaddy@users.noreply.github.com > public.key
 ```
 
-Update the `GPG_PRIVATE_KEY` secret, the `GPG_KEY_FINGERPRINT` variable and the committed
-`public.key`, then run the workflow again. Existing installations must download the new
-key and update their `signed-by` keyring. See [SECURITY.md](SECURITY.md) for reporting a
-key compromise.
+Update the `GPG_PRIVATE_KEY` and `GPG_PUBLIC_KEY` secrets and the
+`GPG_KEY_FINGERPRINT` variable, then run the workflow again. The Pages job republishes
+the new public key from the secrets. Existing installations must download the new key and
+update their `signed-by` keyring. See [SECURITY.md](SECURITY.md) for reporting a key
+compromise.
 
 ## Quality checks
 
