@@ -129,8 +129,13 @@ sed -e "s/@VERSION@/${VERSION}/g" \
     -e "s|@PAGES_BASE_URL@|${PAGES_BASE_URL}|g" \
     "$REPO_ROOT/pages/index.html" > "$SITE/index.html"
 install -m 0755 "$REPO_ROOT/pages/install.sh" "$SITE/install.sh"
-install -m 0644 "$REPO_ROOT/pages/i18n.js" "$SITE/i18n.js"
-install -m 0644 "$REPO_ROOT/assets/caddy.svg" "$SITE/caddy.svg"
+# Publish the static site assets alongside the flat APT repository.
+install -d "$SITE/assets"
+cp -R "$REPO_ROOT/pages/assets/." "$SITE/assets/"
+find "$SITE/assets" -type d -exec chmod 0755 {} +
+find "$SITE/assets" -type f -exec chmod 0644 {} +
+sed "s|@PAGES_BASE_URL@|${PAGES_BASE_URL}|g" "$REPO_ROOT/pages/robots.txt" > "$SITE/robots.txt"
+sed "s|@PAGES_BASE_URL@|${PAGES_BASE_URL}|g" "$REPO_ROOT/pages/sitemap.xml" > "$SITE/sitemap.xml"
 
 # --- summary for the CI log ---
 log "repository contents:"
@@ -144,8 +149,13 @@ test -s "$SITE/InRelease"       || { echo "error: InRelease is missing" >&2; exi
 test -s "$SITE/Release.gpg"     || { echo "error: Release.gpg is missing" >&2; exit 1; }
 test -s "$SITE/public.key"      || { echo "error: public.key is missing" >&2; exit 1; }
 test -s "$SITE/easycaddy-archive-keyring.gpg" || { echo "error: keyring is missing" >&2; exit 1; }
-test -s "$SITE/i18n.js"         || { echo "error: i18n.js is missing" >&2; exit 1; }
-test -s "$SITE/caddy.svg"       || { echo "error: caddy.svg is missing" >&2; exit 1; }
+test -s "$SITE/assets/site.css" || { echo "error: site.css is missing" >&2; exit 1; }
+test -s "$SITE/assets/site.js"  || { echo "error: site.js is missing" >&2; exit 1; }
+test -s "$SITE/assets/i18n.js"  || { echo "error: i18n.js is missing" >&2; exit 1; }
+test -s "$SITE/assets/theme.js" || { echo "error: theme.js is missing" >&2; exit 1; }
+test -s "$SITE/assets/caddy.svg" || { echo "error: caddy.svg is missing" >&2; exit 1; }
+test -s "$SITE/robots.txt"      || { echo "error: robots.txt is missing" >&2; exit 1; }
+test -s "$SITE/sitemap.xml"     || { echo "error: sitemap.xml is missing" >&2; exit 1; }
 
 if ! grep -q "^Filename: pool/.*\.deb$" "$SITE/Packages"; then
   echo "error: Packages does not reference any pool/*.deb files" >&2

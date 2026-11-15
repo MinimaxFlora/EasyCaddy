@@ -12,6 +12,8 @@ the upstream Caddy release tag; entries are grouped by that version.
 - English, Simplified Chinese, Japanese and Korean README files.
 - Multilingual landing page with Simplified Chinese, Traditional Chinese, English, Japanese and Korean, including automatic language detection, a switcher and `?lang=` support.
 - Redesigned landing page with the official Caddy logo as favicon and brand mark.
+- Split the site into semantic `pages/index.html`, `pages/assets/site.css`, `pages/assets/site.js`, `pages/assets/theme.js` and `pages/assets/i18n.js`; dark theme is now the default, with a pre-paint light-theme bootstrap.
+- Added `robots.txt`, `sitemap.xml`, structured data, canonical/hreflang metadata and a single theme-color source.
 - Local Caddy wordmark assets (`assets/caddy-light.svg`, `assets/caddy-dark.svg`) used in every README header.
 - Debian Policy quality checks and lintian overrides in the packaging script.
 

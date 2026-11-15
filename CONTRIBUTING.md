@@ -60,6 +60,25 @@ The package version must stay identical to the upstream release. `make-deb.sh` a
 Debian Policy fixes documented in the README and writes the package to
 `dist/caddy_2.11.9_linux_amd64.deb`.
 
+## Website architecture
+
+The repository site is a no-build static site. Keep the separation strict:
+
+- `pages/index.html` — semantic markup and default Chinese copy only.
+- `pages/assets/site.css` — design tokens, layout, components and responsive rules.
+- `pages/assets/site.js` — theme toggle, navigation, tabs, copy buttons and scroll progress.
+- `pages/assets/theme.js` — the small pre-paint bootstrap that applies a stored light theme and the theme-color meta tag.
+- `pages/assets/i18n.js` — the five-language dictionary and language switcher.
+- `pages/robots.txt` and `pages/sitemap.xml` — deployed with `@PAGES_BASE_URL@` replaced by `make-apt-repo.sh`.
+
+Rules:
+
+- Do not add inline `<style>` blocks, inline event handlers, or large inline scripts. Inline JSON-LD is the only intentional exception.
+- Keep the default theme dark; verify the light theme through the toggle and a reload.
+- Verify the page without JavaScript: core install information must remain readable.
+- Check 390 px mobile layout, keyboard navigation, copy buttons, both themes, all five languages, and that no page has horizontal overflow.
+- `make-apt-repo.sh` copies `pages/assets/` recursively. Any new asset must be linked with a relative `assets/...` path.
+
 ## Checks before opening a pull request
 
 ```bash

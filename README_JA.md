@@ -163,12 +163,17 @@ ARMv7 を APT で提供し、ARMv6 の `.deb` と `.tar.gz` は GitHub Release �
 .github/PULL_REQUEST_TEMPLATE.md   PR チェックリスト
 .github/dependabot.yml             GitHub Actions の週次更新
 .github/actionlint.yaml            actionlint 設定
-assets/caddy.svg                   ページの favicon とブランドアイコン
 assets/caddy-light.svg             README ワードマーク（ライト）
 assets/caddy-dark.svg              README ワードマーク（ダーク）
-pages/index.html                   APT リポジトリのトップページ
-pages/i18n.js                      5 言語のページ翻訳
+pages/index.html                   セマンティックなページ構造
+pages/assets/site.css              デザイントークンとコンポーネント
+pages/assets/site.js               テーマ、ナビ、タブ、コピー操作
+pages/assets/theme.js              初回描画前のテーマ初期化
+pages/assets/i18n.js               5 言語の翻訳
+pages/assets/caddy.svg             favicon とブランドアイコン
 pages/install.sh                   ユーザー向けインストーラー
+pages/robots.txt                   クローラーポリシー
+pages/sitemap.xml                  サイトマップ
 public.key                         APT リポジトリ署名用公開鍵
 README.md / README_ZH.md / README_JA.md / README_KR.md
 CONTRIBUTING.md                    コントリビューションガイド

@@ -152,12 +152,17 @@ ARMv6 的 `.deb` 和 `.tar.gz` 放在 GitHub Release 供手动下载。
 .github/PULL_REQUEST_TEMPLATE.md   PR 检查清单
 .github/dependabot.yml             每周更新 GitHub Actions
 .github/actionlint.yaml            actionlint 配置
-assets/caddy.svg                   页面 favicon 与品牌图标
 assets/caddy-light.svg             README 字标（浅色）
 assets/caddy-dark.svg              README 字标（深色）
-pages/index.html                   APT 仓库首页
-pages/i18n.js                      五语言页面翻译
+pages/index.html                   语义化页面结构
+pages/assets/site.css              页面设计变量与组件样式
+pages/assets/site.js               主题、导航、标签页与复制交互
+pages/assets/theme.js              首屏前的主题引导
+pages/assets/i18n.js               五语言翻译
+pages/assets/caddy.svg             favicon 与品牌图标
 pages/install.sh                   用户安装脚本
+pages/robots.txt                   爬虫策略
+pages/sitemap.xml                  搜索引擎站点地图
 public.key                         APT 仓库签名公钥
 README.md / README_ZH.md / README_JA.md / README_KR.md
 CONTRIBUTING.md                    贡献指南

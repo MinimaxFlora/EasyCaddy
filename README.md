@@ -161,12 +161,17 @@ through APT; the ARMv6 `.deb` and `.tar.gz` are available from the GitHub Releas
 .github/PULL_REQUEST_TEMPLATE.md   Pull request checklist
 .github/dependabot.yml             Weekly GitHub Actions updates
 .github/actionlint.yaml            actionlint configuration
-assets/caddy.svg                   Caddy icon used by the page favicon and brand
 assets/caddy-light.svg             README wordmark (light)
 assets/caddy-dark.svg              README wordmark (dark)
-pages/index.html                   APT repository landing page
-pages/i18n.js                      Five-language page translations
+pages/index.html                   Semantic page structure
+pages/assets/site.css              Page design tokens and components
+pages/assets/site.js               Theme, navigation, tabs and copy interactions
+pages/assets/theme.js              Pre-paint theme bootstrap
+pages/assets/i18n.js               Five-language translations
+pages/assets/caddy.svg             Favicon and brand icon
 pages/install.sh                   User installer
+pages/robots.txt                   Crawler policy
+pages/sitemap.xml                  Search-engine sitemap
 public.key                         APT repository signing public key
 README.md / README_ZH.md / README_JA.md / README_KR.md
 CONTRIBUTING.md                    Contribution guide

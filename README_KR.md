@@ -161,12 +161,17 @@ Debian 아키텍처 `armhf`로 표기하며, 이름, 버전, 아키텍처가 같
 .github/PULL_REQUEST_TEMPLATE.md   PR 체크리스트
 .github/dependabot.yml             GitHub Actions 주간 업데이트
 .github/actionlint.yaml            actionlint 설정
-assets/caddy.svg                   페이지 favicon 및 브랜드 아이콘
 assets/caddy-light.svg             README 워드마크(라이트)
 assets/caddy-dark.svg              README 워드마크(다크)
-pages/index.html                   APT 저장소 랜딩 페이지
-pages/i18n.js                      5개 언어 페이지 번역
+pages/index.html                   시맨틱 페이지 구조
+pages/assets/site.css              디자인 토큰과 컴포넌트 스타일
+pages/assets/site.js               테마, 탐색, 탭, 복사 상호작용
+pages/assets/theme.js              첫 렌더링 전 테마 초기화
+pages/assets/i18n.js               5개 언어 번역
+pages/assets/caddy.svg             favicon 및 브랜드 아이콘
 pages/install.sh                   사용자 설치 스크립트
+pages/robots.txt                   크롤러 정책
+pages/sitemap.xml                  사이트맵
 public.key                         APT 저장소 서명 공개 키
 README.md / README_ZH.md / README_JA.md / README_KR.md
 CONTRIBUTING.md                    기여 가이드
