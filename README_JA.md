@@ -1,9 +1,41 @@
-# EasyCaddy
+<p align="center">
+  <a href="https://caddyserver.com">
+    <picture>
+      <source media="(prefers-color-scheme: dark)" srcset="assets/caddy-dark.svg">
+      <source media="(prefers-color-scheme: light)" srcset="assets/caddy-light.svg">
+      <img src="assets/caddy-light.svg" alt="Caddy" width="550">
+    </picture>
+  </a>
+  <br>
+  <h3 align="center">EasyCaddy — プラグイン入り Caddy の非公式ビルド</h3>
+</p>
 
-[English](README.md) | [简体中文](README_ZH.md) | [日本語](README_JA.md) | [한국어](README_KR.md)
+<p align="center">
+  <a href="https://github.com/MinimaxFlora/EasyCaddy/actions/workflows/build.yml"><img src="https://github.com/MinimaxFlora/EasyCaddy/actions/workflows/build.yml/badge.svg?branch=master" alt="Build Caddy with plugins"></a>
+  &nbsp;
+  <a href="https://github.com/MinimaxFlora/EasyCaddy/releases/latest"><img src="https://img.shields.io/github/v/release/MinimaxFlora/EasyCaddy" alt="Latest release"></a>
+  &nbsp;
+  <a href="https://caddy.tatalvpai.vip"><img src="https://img.shields.io/badge/APT-caddy.tatalvpai.vip-3d6b50" alt="APT repository"></a>
+</p>
 
-[![Build Caddy with plugins](https://github.com/MinimaxFlora/EasyCaddy/actions/workflows/build.yml/badge.svg?branch=master)](https://github.com/MinimaxFlora/EasyCaddy/actions/workflows/build.yml)
-[![Latest release](https://img.shields.io/github/v/release/MinimaxFlora/EasyCaddy)](https://github.com/MinimaxFlora/EasyCaddy/releases/latest)
+<p align="center">
+  <a href="README.md">English</a> ·
+  <a href="README_ZH.md">简体中文</a> ·
+  <a href="README_JA.md">日本語</a> ·
+  <a href="README_KR.md">한국어</a>
+</p>
+
+<p align="center">
+  <a href="#インストール">インストール</a> ·
+  <a href="#プラグイン">プラグイン</a> ·
+  <a href="#アーキテクチャ">アーキテクチャ</a> ·
+  <a href="#品質チェック">品質チェック</a> ·
+  <a href="#コントリビューション">コントリビューション</a>
+</p>
+
+> **非公式ビルド。** EasyCaddy は Caddy プロジェクトと提携しておらず、承認も受けていません。Caddy の名称とロゴは Stack Holdings GmbH の商標です。
+
+<hr>
 
 [Caddy](https://github.com/caddyserver/caddy) の公式ソースに厳選したサードパーティ
 モジュールを組み込んだ非公式ビルドです。`.deb` パッケージとして配布し、署名付き APT
@@ -131,7 +163,11 @@ ARMv7 を APT で提供し、ARMv6 の `.deb` と `.tar.gz` は GitHub Release �
 .github/PULL_REQUEST_TEMPLATE.md   PR チェックリスト
 .github/dependabot.yml             GitHub Actions の週次更新
 .github/actionlint.yaml            actionlint 設定
+assets/caddy.svg                   ページの favicon とブランドアイコン
+assets/caddy-light.svg             README ワードマーク（ライト）
+assets/caddy-dark.svg              README ワードマーク（ダーク）
 pages/index.html                   APT リポジトリのトップページ
+pages/i18n.js                      5 言語のページ翻訳
 pages/install.sh                   ユーザー向けインストーラー
 public.key                         APT リポジトリ署名用公開鍵
 README.md / README_ZH.md / README_JA.md / README_KR.md

@@ -1,9 +1,41 @@
-# EasyCaddy
+<p align="center">
+  <a href="https://caddyserver.com">
+    <picture>
+      <source media="(prefers-color-scheme: dark)" srcset="assets/caddy-dark.svg">
+      <source media="(prefers-color-scheme: light)" srcset="assets/caddy-light.svg">
+      <img src="assets/caddy-light.svg" alt="Caddy" width="550">
+    </picture>
+  </a>
+  <br>
+  <h3 align="center">EasyCaddy — 플러그인이 포함된 Caddy 비공식 빌드</h3>
+</p>
 
-[English](README.md) | [简体中文](README_ZH.md) | [日本語](README_JA.md) | [한국어](README_KR.md)
+<p align="center">
+  <a href="https://github.com/MinimaxFlora/EasyCaddy/actions/workflows/build.yml"><img src="https://github.com/MinimaxFlora/EasyCaddy/actions/workflows/build.yml/badge.svg?branch=master" alt="Build Caddy with plugins"></a>
+  &nbsp;
+  <a href="https://github.com/MinimaxFlora/EasyCaddy/releases/latest"><img src="https://img.shields.io/github/v/release/MinimaxFlora/EasyCaddy" alt="Latest release"></a>
+  &nbsp;
+  <a href="https://caddy.tatalvpai.vip"><img src="https://img.shields.io/badge/APT-caddy.tatalvpai.vip-3d6b50" alt="APT repository"></a>
+</p>
 
-[![Build Caddy with plugins](https://github.com/MinimaxFlora/EasyCaddy/actions/workflows/build.yml/badge.svg?branch=master)](https://github.com/MinimaxFlora/EasyCaddy/actions/workflows/build.yml)
-[![Latest release](https://img.shields.io/github/v/release/MinimaxFlora/EasyCaddy)](https://github.com/MinimaxFlora/EasyCaddy/releases/latest)
+<p align="center">
+  <a href="README.md">English</a> ·
+  <a href="README_ZH.md">简体中文</a> ·
+  <a href="README_JA.md">日本語</a> ·
+  <a href="README_KR.md">한국어</a>
+</p>
+
+<p align="center">
+  <a href="#설치">설치</a> ·
+  <a href="#플러그인">플러그인</a> ·
+  <a href="#아키텍처">아키텍처</a> ·
+  <a href="#품질-검사">품질 검사</a> ·
+  <a href="#기여">기여</a>
+</p>
+
+> **비공식 빌드.** EasyCaddy는 Caddy 프로젝트와 제휴하거나 승인받지 않았습니다. Caddy 이름과 로고는 Stack Holdings GmbH의 상표입니다.
+
+<hr>
 
 [Caddy](https://github.com/caddyserver/caddy) 공식 소스에 엄선한 서드파티 모듈을 추가해
 빌드한 비공식 패키지입니다. `.deb` 패키지로 제공하며, 서명된 APT 저장소에서 배포합니다.
@@ -129,7 +161,11 @@ Debian 아키텍처 `armhf`로 표기하며, 이름, 버전, 아키텍처가 같
 .github/PULL_REQUEST_TEMPLATE.md   PR 체크리스트
 .github/dependabot.yml             GitHub Actions 주간 업데이트
 .github/actionlint.yaml            actionlint 설정
+assets/caddy.svg                   페이지 favicon 및 브랜드 아이콘
+assets/caddy-light.svg             README 워드마크(라이트)
+assets/caddy-dark.svg              README 워드마크(다크)
 pages/index.html                   APT 저장소 랜딩 페이지
+pages/i18n.js                      5개 언어 페이지 번역
 pages/install.sh                   사용자 설치 스크립트
 public.key                         APT 저장소 서명 공개 키
 README.md / README_ZH.md / README_JA.md / README_KR.md

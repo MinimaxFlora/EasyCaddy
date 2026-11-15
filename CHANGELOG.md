@@ -10,6 +10,9 @@ the upstream Caddy release tag; entries are grouped by that version.
 - Issue forms for bug reports and feature/plugin requests.
 - Pull request template, CODEOWNERS, Dependabot configuration and funding metadata.
 - English, Simplified Chinese, Japanese and Korean README files.
+- Multilingual landing page with Simplified Chinese, Traditional Chinese, English, Japanese and Korean, including automatic language detection, a switcher and `?lang=` support.
+- Redesigned landing page with the official Caddy logo as favicon and brand mark.
+- Local Caddy wordmark assets (`assets/caddy-light.svg`, `assets/caddy-dark.svg`) used in every README header.
 - Debian Policy quality checks and lintian overrides in the packaging script.
 
 ### Changed

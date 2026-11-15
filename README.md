@@ -1,11 +1,43 @@
-# EasyCaddy
+<p align="center">
+  <a href="https://caddyserver.com">
+    <picture>
+      <source media="(prefers-color-scheme: dark)" srcset="assets/caddy-dark.svg">
+      <source media="(prefers-color-scheme: light)" srcset="assets/caddy-light.svg">
+      <img src="assets/caddy-light.svg" alt="Caddy" width="550">
+    </picture>
+  </a>
+  <br>
+  <h3 align="center">EasyCaddy — Unofficial Caddy builds with extra plugins</h3>
+</p>
 
-[English](README.md) | [简体中文](README_ZH.md) | [日本語](README_JA.md) | [한국어](README_KR.md)
+<p align="center">
+  <a href="https://github.com/MinimaxFlora/EasyCaddy/actions/workflows/build.yml"><img src="https://github.com/MinimaxFlora/EasyCaddy/actions/workflows/build.yml/badge.svg?branch=master" alt="Build Caddy with plugins"></a>
+  &nbsp;
+  <a href="https://github.com/MinimaxFlora/EasyCaddy/releases/latest"><img src="https://img.shields.io/github/v/release/MinimaxFlora/EasyCaddy" alt="Latest release"></a>
+  &nbsp;
+  <a href="https://caddy.tatalvpai.vip"><img src="https://img.shields.io/badge/APT-caddy.tatalvpai.vip-3d6b50" alt="APT repository"></a>
+</p>
 
-[![Build Caddy with plugins](https://github.com/MinimaxFlora/EasyCaddy/actions/workflows/build.yml/badge.svg?branch=master)](https://github.com/MinimaxFlora/EasyCaddy/actions/workflows/build.yml)
-[![Latest release](https://img.shields.io/github/v/release/MinimaxFlora/EasyCaddy)](https://github.com/MinimaxFlora/EasyCaddy/releases/latest)
+<p align="center">
+  <a href="README.md">English</a> ·
+  <a href="README_ZH.md">简体中文</a> ·
+  <a href="README_JA.md">日本語</a> ·
+  <a href="README_KR.md">한국어</a>
+</p>
 
-Unofficial [Caddy](https://github.com/caddyserver/caddy) builds with a curated set of
+<p align="center">
+  <a href="#install">Install</a> ·
+  <a href="#plugins">Plugins</a> ·
+  <a href="#architectures">Architectures</a> ·
+  <a href="#quality-checks">QC</a> ·
+  <a href="#contributing">Contributing</a>
+</p>
+
+> **Unofficial build.** EasyCaddy is not affiliated with or endorsed by the Caddy project. Caddy and the Caddy logo are trademarks of Stack Holdings GmbH.
+
+<hr>
+
+Built from upstream [Caddy](https://github.com/caddyserver/caddy) with a curated set of
 third-party modules, packaged as `.deb` files and published as a signed APT repository
 at **https://caddy.tatalvpai.vip**.
 
@@ -129,7 +161,11 @@ through APT; the ARMv6 `.deb` and `.tar.gz` are available from the GitHub Releas
 .github/PULL_REQUEST_TEMPLATE.md   Pull request checklist
 .github/dependabot.yml             Weekly GitHub Actions updates
 .github/actionlint.yaml            actionlint configuration
+assets/caddy.svg                   Caddy icon used by the page favicon and brand
+assets/caddy-light.svg             README wordmark (light)
+assets/caddy-dark.svg              README wordmark (dark)
 pages/index.html                   APT repository landing page
+pages/i18n.js                      Five-language page translations
 pages/install.sh                   User installer
 public.key                         APT repository signing public key
 README.md / README_ZH.md / README_JA.md / README_KR.md

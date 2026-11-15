@@ -1,9 +1,41 @@
-# EasyCaddy
+<p align="center">
+  <a href="https://caddyserver.com">
+    <picture>
+      <source media="(prefers-color-scheme: dark)" srcset="assets/caddy-dark.svg">
+      <source media="(prefers-color-scheme: light)" srcset="assets/caddy-light.svg">
+      <img src="assets/caddy-light.svg" alt="Caddy" width="550">
+    </picture>
+  </a>
+  <br>
+  <h3 align="center">EasyCaddy — 带插件的 Caddy 非官方构建</h3>
+</p>
 
-[English](README.md) | [简体中文](README_ZH.md) | [日本語](README_JA.md) | [한국어](README_KR.md)
+<p align="center">
+  <a href="https://github.com/MinimaxFlora/EasyCaddy/actions/workflows/build.yml"><img src="https://github.com/MinimaxFlora/EasyCaddy/actions/workflows/build.yml/badge.svg?branch=master" alt="Build Caddy with plugins"></a>
+  &nbsp;
+  <a href="https://github.com/MinimaxFlora/EasyCaddy/releases/latest"><img src="https://img.shields.io/github/v/release/MinimaxFlora/EasyCaddy" alt="Latest release"></a>
+  &nbsp;
+  <a href="https://caddy.tatalvpai.vip"><img src="https://img.shields.io/badge/APT-caddy.tatalvpai.vip-3d6b50" alt="APT repository"></a>
+</p>
 
-[![Build Caddy with plugins](https://github.com/MinimaxFlora/EasyCaddy/actions/workflows/build.yml/badge.svg?branch=master)](https://github.com/MinimaxFlora/EasyCaddy/actions/workflows/build.yml)
-[![Latest release](https://img.shields.io/github/v/release/MinimaxFlora/EasyCaddy)](https://github.com/MinimaxFlora/EasyCaddy/releases/latest)
+<p align="center">
+  <a href="README.md">English</a> ·
+  <a href="README_ZH.md">简体中文</a> ·
+  <a href="README_JA.md">日本語</a> ·
+  <a href="README_KR.md">한국어</a>
+</p>
+
+<p align="center">
+  <a href="#安装">安装</a> ·
+  <a href="#内置插件">插件</a> ·
+  <a href="#架构">架构</a> ·
+  <a href="#质量检查">质量检查</a> ·
+  <a href="#贡献">贡献</a>
+</p>
+
+> **非官方构建。** EasyCaddy 与 Caddy 项目没有隶属关系，也未获得其背书。Caddy 名称与 Caddy 徽标是 Stack Holdings GmbH 的商标。
+
+<hr>
 
 用 Caddy 官方源码加一组精选第三方模块编译的非官方构建，产出 `.deb` 并通过签名 APT 仓库发布：
 
@@ -120,7 +152,11 @@ ARMv6 的 `.deb` 和 `.tar.gz` 放在 GitHub Release 供手动下载。
 .github/PULL_REQUEST_TEMPLATE.md   PR 检查清单
 .github/dependabot.yml             每周更新 GitHub Actions
 .github/actionlint.yaml            actionlint 配置
+assets/caddy.svg                   页面 favicon 与品牌图标
+assets/caddy-light.svg             README 字标（浅色）
+assets/caddy-dark.svg              README 字标（深色）
 pages/index.html                   APT 仓库首页
+pages/i18n.js                      五语言页面翻译
 pages/install.sh                   用户安装脚本
 public.key                         APT 仓库签名公钥
 README.md / README_ZH.md / README_JA.md / README_KR.md
