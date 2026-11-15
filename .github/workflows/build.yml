@@ -1,6 +1,14 @@
 name: Build Caddy with plugins
 
 on:
+  push:
+    branches:
+      - master
+    paths:
+      - "pages/**"
+      - "assets/**"
+      - ".github/scripts/make-apt-repo.sh"
+      - ".github/workflows/build.yml"
   schedule:
     # Every Monday 03:00 UTC. Change this if you want a different cadence.
     - cron: "0 3 * * 1"
