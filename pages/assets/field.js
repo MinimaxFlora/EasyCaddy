@@ -76,7 +76,7 @@
       x: initial ? random(-width * 0.1, width * 1.1) : (direction === 1 ? -random(40, 220) : width + random(40, 220)),
       length: random(42, 176),
       speed: random(11, 38),
-      alpha: random(0.28, 0.58),
+      alpha: random(0.36, 0.66),
       lineWidth: random(1.2, 2.8),
       color: colors[Math.floor(Math.random() * colors.length)] || "#a2b09b",
       wobble: random(0.5, 1.8),
@@ -91,7 +91,7 @@
     // Faint isometric lattice.
     for (var i = 0; i < lattice.length; i += 1) {
       var lane = lattice[i];
-      ctx.globalAlpha = 0.07;
+      ctx.globalAlpha = 0.09;
       ctx.strokeStyle = colors[3] || colors[4] || "#a2b09b";
       ctx.lineWidth = 1;
       ctx.beginPath();

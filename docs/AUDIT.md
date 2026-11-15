@@ -54,18 +54,26 @@ config/toolchain.json ────┘                         │
   signature and Packages hash checks.
 - Local site: desktop/mobile rendering, 390 px overflow check, dark/light
   themes, five languages, no-JS rendering and generated-site validation.
-- GitHub Actions build/deploy runs from earlier revisions (see the Actions tab).
+- GitHub Actions: static checks, amd64 package build, module smoke test, signed
+  APT test, full 8-architecture release, Pages deployment and the force-rebuild
+  path all completed successfully.
+- Released amd64 binary: all 11 locked plugin versions and their smoke modules
+  verified with `go version -m` and `caddy list-modules` (203 modules total).
+- Release provenance: CycloneDX SBOM has 199 components; build provenance
+  attestation verifies with `gh attestation verify`.
+- Installer/uninstaller on Debian 13 amd64: fingerprint verification, keyring,
+  APT pin, `--reinstall`, module list, Caddyfile validation and active systemd
+  service passed; the default uninstall removed the package and EasyCaddy APT
+  files while preserving `/etc/caddy` and `/var/lib/caddy`.
 
 ## Not verified
 
 - Runtime execution of `arm64`, `armv7`, `armv6`, `armv5`, `ppc64le`, `riscv64`
   or `s390x` on target hardware.
 - Installation on Ubuntu or Debian versions other than Debian 13 amd64.
-- A full real installer run using the final hardened script on a fresh VM
-  (dry-run and earlier install flows have been exercised separately).
-- The GitHub artifact attestation and SBOM upload until the hardened workflow
-  completes its first run.
 - A real signing-key rotation.
+- A `.sources` (Deb822) install regression on a VM dedicated to that scenario;
+  the source parser has been reviewed but not exercised in a real install.
 
 These must not be reported as passing until actually executed.
 

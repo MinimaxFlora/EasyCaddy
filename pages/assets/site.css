@@ -92,12 +92,12 @@
     --violet-soft: #2a2436;
     --amber: #d5b07c;
     --amber-soft: #332a1d;
-    --field-1: #7b5f66;
-    --field-2: #806657;
-    --field-3: #6a6254;
-    --field-4: #5b6958;
-    --field-5: #546575;
-    --field-6: #655e7b;
+    --field-1: #b08a92;
+    --field-2: #b8957f;
+    --field-3: #a89b84;
+    --field-4: #8fa68c;
+    --field-5: #8fa3b5;
+    --field-6: #a49ab8;
     --shadow: 0 24px 60px rgb(0 0 0 / 0.35);
     --shadow-sm: 0 8px 24px rgb(0 0 0 / 0.25);
     color-scheme: dark;
@@ -135,12 +135,12 @@
   --violet-soft: #2a2436;
   --amber: #d5b07c;
   --amber-soft: #332a1d;
-  --field-1: #7b5f66;
-  --field-2: #806657;
-  --field-3: #6a6254;
-  --field-4: #5b6958;
-  --field-5: #546575;
-  --field-6: #655e7b;
+  --field-1: #b08a92;
+  --field-2: #b8957f;
+  --field-3: #a89b84;
+  --field-4: #8fa68c;
+  --field-5: #8fa3b5;
+  --field-6: #a49ab8;
   --shadow: 0 24px 60px rgb(0 0 0 / 0.35);
   --shadow-sm: 0 8px 24px rgb(0 0 0 / 0.25);
   color-scheme: dark;
@@ -398,7 +398,7 @@ main { overflow: clip; }
   inset: 0;
   width: 100%;
   height: 100%;
-  opacity: .9;
+  opacity: .95;
   pointer-events: none;
 }
 .grid-lines {
