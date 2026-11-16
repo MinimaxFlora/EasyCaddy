@@ -36,7 +36,7 @@ for asset in sorted(set(re.findall(r'(?:src|href)="(assets/[^"]+)"', html))):
 
 for required in (
     "assets/site.css", "assets/site.js", "assets/theme.js", "assets/field.js",
-    "assets/i18n.js", "assets/mascot.png", "assets/favicon.png", "assets/og.png", "install.sh", "uninstall.sh",
+    "assets/i18n.js", "assets/mascot.png", "assets/caddy.svg", "assets/og.png", "install.sh", "uninstall.sh",
     "robots.txt", "sitemap.xml", "Packages", "Packages.gz",
     "Release", "InRelease", "Release.gpg", "public.key",
 ):

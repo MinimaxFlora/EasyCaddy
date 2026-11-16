@@ -11,10 +11,11 @@ the upstream Caddy release tag; entries are grouped by that version.
 - Pull request template, CODEOWNERS, Dependabot configuration and funding metadata.
 - English, Simplified Chinese, Japanese and Korean README files.
 - Multilingual landing page with Simplified Chinese, Traditional Chinese, English, Japanese and Korean, including automatic language detection, a switcher and `?lang=` support.
-- Redesigned landing page with a cartoon mascot as the brand mark, favicon and hero visual, plus an isometric traveling-field animation inspired by FlClash.
+- Redesigned landing page with a transparent cartoon mascot in the hero and floating card, the Caddy brand icon and favicon restored, plus an isometric traveling-field animation inspired by FlClash.
 - Split the site into semantic `pages/index.html`, `pages/assets/site.css`, `pages/assets/site.js`, `pages/assets/theme.js` and `pages/assets/i18n.js`; dark theme is now the default, with a pre-paint light-theme bootstrap.
 - Added `robots.txt`, `sitemap.xml`, structured data, canonical/hreflang metadata, a generated 1200×630 Open Graph card and a single theme-color source.
-- Local Caddy wordmark assets (`assets/caddy-light.svg`, `assets/caddy-dark.svg`) used in every README header.
+- Local Caddy wordmark assets (`assets/caddy-light.svg`, `assets/caddy-dark.svg`) used in every README header; the site favicon/brand icon uses `pages/assets/caddy.svg`.
+- Floating-card copy is localized (Chinese by default), removing the raw English `apt-cache policy` text.
 - Isometric canvas field (`pages/assets/field.js`) with traveling capsules, off-screen pause and reduced-motion fallback; the language button is now icon-only.
 - Debian Policy quality checks and lintian overrides in the packaging script.
 - Authoritative `config/plugins.lock.json`, `config/build-matrix.json` and `config/toolchain.json`; CI verifies modules, architecture lists and docs against them.

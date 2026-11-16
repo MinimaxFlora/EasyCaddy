@@ -201,7 +201,7 @@ test -s "$SITE/assets/site.js"  || die "site.js is missing"
 test -s "$SITE/assets/i18n.js"  || die "i18n.js is missing"
 test -s "$SITE/assets/theme.js" || die "theme.js is missing"
 test -s "$SITE/assets/mascot.png" || die "mascot.png is missing"
-test -s "$SITE/assets/favicon.png" || die "favicon.png is missing"
+test -s "$SITE/assets/caddy.svg" || die "caddy.svg is missing"
 test -s "$SITE/robots.txt"      || die "robots.txt is missing"
 test -s "$SITE/sitemap.xml"     || die "sitemap.xml is missing"
 
