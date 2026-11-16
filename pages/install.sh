@@ -209,6 +209,7 @@ if [ "$DRY_RUN" -eq 1 ]; then
 fi
 
 mkdir -p "$STATE_DIR" "$BACKUP_DIR"
+touch "$MANIFEST"
 ln -sfn "$BACKUP_DIR" "$BACKUP_ROOT/latest"
 printf 'installed_at=%s\nbase_url=%s\nfingerprint=%s\nbackup_dir=%s\n' \
   "$(date -u +%Y-%m-%dT%H:%M:%SZ)" "$BASE_URL" "${EXPECTED_FINGERPRINT^^}" "$BACKUP_DIR" \

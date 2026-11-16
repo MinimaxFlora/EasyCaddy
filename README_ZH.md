@@ -115,6 +115,15 @@ curl -fsSL https://caddy.tatalvpai.vip/uninstall.sh | sudo bash
 `/etc/caddy`、`/var/lib/caddy`、证书、日志和站点数据会保留。可加 `--dry-run` 预览。
 要删除配置必须同时使用 `--purge` 和 `--yes`。
 
+### 只读诊断
+
+```bash
+curl -fsSL https://caddy.tatalvpai.vip/diagnose.sh | sudo bash
+```
+
+诊断脚本不会修改任何文件、服务或配置，只输出发行版/架构、软件包来源、APT pin、keyring、
+已加载模块、Caddyfile 校验、systemd 状态和最近日志。
+
 ## 内置插件
 
 | 模块 | 用途 |
@@ -184,6 +193,7 @@ pages/assets/caddy.svg             Caddy 品牌图标与 favicon
 pages/assets/og.png                1200×630 Open Graph 分享图
 pages/install.sh                   用户安装脚本
 pages/uninstall.sh                 安全卸载/恢复脚本
+pages/diagnose.sh                  只读诊断脚本
 pages/robots.txt                   爬虫策略
 pages/sitemap.xml                  搜索引擎站点地图
 README.md / README_ZH.md / README_JA.md / README_KR.md

@@ -65,15 +65,23 @@ config/toolchain.json ────┘                         │
   APT pin, `--reinstall`, module list, Caddyfile validation and active systemd
   service passed; the default uninstall removed the package and EasyCaddy APT
   files while preserving `/etc/caddy` and `/var/lib/caddy`.
+- Deb822 `.sources` scenario on Debian 13: an official-style source was detected,
+  backed up, disabled with `Enabled: no`, and restored by the uninstaller.
+- Ubuntu 26.04 LTS systemd container: install from the published repository,
+  fingerprint check, modules, validate, active systemd service and uninstall all
+  passed.
+- All eight release binaries were executed under `qemu-user-static`; each reported
+  `v2.11.9`, 205 modules, all expected plugin modules and a valid Caddyfile.
+- Read-only `diagnose.sh` was added for support collection.
 
 ## Not verified
 
-- Runtime execution of `arm64`, `armv7`, `armv6`, `armv5`, `ppc64le`, `riscv64`
-  or `s390x` on target hardware.
-- Installation on Ubuntu or Debian versions other than Debian 13 amd64.
-- A real signing-key rotation.
-- A `.sources` (Deb822) install regression on a VM dedicated to that scenario;
-  the source parser has been reviewed but not exercised in a real install.
+- Native target-hardware execution of `arm64`, `armv7`, `armv6`, `armv5`,
+  `ppc64le`, `riscv64` or `s390x` (QEMU emulation is not a hardware test).
+- Linux distributions other than Debian 13 and Ubuntu 26.04.
+- A real production signing-key rotation (temporary-key mechanics are tested;
+  rotating production would invalidate existing keyrings).
+- A native hardware performance/load test.
 
 These must not be reported as passing until actually executed.
 

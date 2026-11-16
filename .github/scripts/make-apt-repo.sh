@@ -177,6 +177,7 @@ sed -e "s/@VERSION@/${VERSION}/g" \
     "$REPO_ROOT/pages/index.html" > "$SITE/index.html"
 install -m 0755 "$REPO_ROOT/pages/install.sh" "$SITE/install.sh"
 install -m 0755 "$REPO_ROOT/pages/uninstall.sh" "$SITE/uninstall.sh"
+install -m 0755 "$REPO_ROOT/pages/diagnose.sh" "$SITE/diagnose.sh"
 install -d "$SITE/assets"
 cp -R "$REPO_ROOT/pages/assets/." "$SITE/assets/"
 find "$SITE/assets" -type d -exec chmod 0755 {} +

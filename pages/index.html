@@ -225,6 +225,7 @@ apt-cache policy caddy</code></pre>
         </div>
         <p data-i18n-html="install.upgrade.desc">站点保留最近 3 个版本，旧版本仍可从 GitHub Releases 下载。需要固定版本时，用 <code>apt</code> 显式安装指定版本。</p>
         <p><span data-i18n="install.uninstallLabel">卸载或恢复官方源：</span> <code>curl -fsSL @PAGES_BASE_URL@/uninstall.sh | sudo bash</code></p>
+        <p><span data-i18n="install.diagnoseLabel">只读诊断：</span> <code>curl -fsSL @PAGES_BASE_URL@/diagnose.sh | sudo bash</code></p>
         <div class="callout">
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 9v4M12 17h.01"/><path d="M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0Z"/></svg>
           <span data-i18n-html="install.upgrade.note">不要运行 <code>caddy upgrade</code>：它会下载官方二进制并覆盖当前文件，新增模块会全部丢失。</span>

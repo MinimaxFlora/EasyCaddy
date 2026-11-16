@@ -128,6 +128,11 @@ for path in "$LIST_FILE" "$PREF_FILE" "$KEYRING"; do
 done
 
 if [ "$KEEP_PACKAGE" -ne 1 ] && dpkg -s caddy >/dev/null 2>&1; then
+  # Stop explicitly: container policy-rc.d implementations can otherwise leave
+  # the service running while apt removes the package.
+  if command -v systemctl >/dev/null 2>&1 && [ -d /run/systemd/system ]; then
+    run systemctl stop caddy || true
+  fi
   if [ "$PURGE" -eq 1 ]; then
     run env DEBIAN_FRONTEND=noninteractive apt-get purge -y caddy
   else

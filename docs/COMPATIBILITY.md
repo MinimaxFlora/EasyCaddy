@@ -8,19 +8,34 @@ the binary was executed on that platform.
 
 | Distribution | Architecture | Scope | Date |
 | --- | --- | --- | --- |
-| Debian GNU/Linux 13 (trixie) | amd64 | APT install, same-version `--reinstall`, module loading, systemd start, HTTP smoke test, custom domain | 2026-11-15 |
+| Debian GNU/Linux 13 (trixie) | amd64 | APT install, same-version `--reinstall`, module loading, systemd start, HTTP smoke test, custom domain, uninstall, Deb822 `.sources` detection/restore | 2026-11-16 |
+| Ubuntu 26.04 LTS (systemd container) | amd64 | APT install from the published repository, key fingerprint, APT pin, modules, Caddyfile validation, systemd active, uninstall with user data preserved | 2026-11-16 |
 
-## Build-only
+## Cross-compiled and executed under QEMU user emulation
 
-| Environment | Architecture | Scope |
-| --- | --- | --- |
-| Ubuntu 26.04 GitHub Actions runner | amd64 | cross-build, `.deb` generation, lintian, module smoke test |
+| Architecture | Runtime result |
+| --- | --- |
+| amd64 | `caddy version`, 205 modules, all expected plugins, `caddy validate` |
+| arm64 | same |
+| armv7 | same |
+| armv6 | same |
+| armv5 | same |
+| ppc64le | same |
+| riscv64 | same |
+| s390x | same |
 
-## Cross-compiled but not executed
+These runs used `qemu-user-static` on an amd64 host. They prove the binaries
+start, load the plugins and parse a Caddyfile, but they are **not target-hardware
+tests**. Real-device behaviour (performance, kernel features, network interfaces)
+still needs validation by users.
 
-`arm64`, `armv7`, `armv6`, `armv5`, `ppc64le`, `riscv64` and `s390x` are
-compiled and packaged in CI. They have not been executed on target hardware by
-this project. Users should verify them in their own environment.
+## Not executed
+
+- Native execution on ARM, RISC-V, POWER or s390x hardware.
+- Unsupported or untested Linux distributions.
+- A real signing-key rotation against the production key (the rotation mechanics
+  are tested with temporary keys; rotating the production key would invalidate
+  every existing installation's keyring).
 
 ## APT architecture notes
 

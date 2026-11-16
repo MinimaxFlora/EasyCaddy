@@ -187,6 +187,7 @@ pages/assets/caddy.svg             Caddy ブランドアイコンと favicon
 pages/assets/og.png                1200×630 Open Graph 共有画像
 pages/install.sh                   ユーザー向けインストーラー
 pages/uninstall.sh                 安全なアンインストール/復元
+pages/diagnose.sh                  読み取り専用の診断
 pages/robots.txt                   クローラーポリシー
 pages/sitemap.xml                  サイトマップ
 README.md / README_ZH.md / README_JA.md / README_KR.md

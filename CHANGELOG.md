@@ -21,7 +21,8 @@ the upstream Caddy release tag; entries are grouped by that version.
 - Authoritative `config/plugins.lock.json`, `config/build-matrix.json` and `config/toolchain.json`; CI verifies modules, architecture lists and docs against them.
 - Independent `ci.yml` with ShellCheck, actionlint, yamllint, config/secret checks, an amd64 package build, module smoke test and a signed APT test using a temporary key.
 - Explicit `GPG_KEY_FINGERPRINT` verification and a full-fingerprint signing path; the public key is stored as the `GPG_PUBLIC_KEY` secret and published by Pages instead of being committed.
-- `pages/uninstall.sh` with dry-run, source restoration and explicit purge.
+- `pages/uninstall.sh` with dry-run, source restoration and explicit purge; `pages/diagnose.sh` for read-only support collection.
+- Installer/uninstaller verification on Debian 13, Debian 13 with a Deb822 `.sources` official source, and Ubuntu 26.04 systemd container; all eight binaries executed under QEMU.
 - SBOM, build info, lock/toolchain/matrix assets and build provenance attestation in releases.
 - `LICENSE`, `NOTICE`, `SECURITY.md`, `SUPPORT.md`, `THIRD_PARTY_NOTICES.md`, `docs/COMPATIBILITY.md` and `docs/AUDIT.md`.
 

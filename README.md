@@ -121,6 +121,16 @@ the EasyCaddy source/pin/keyring, and restores files backed up by the installer.
 `/etc/caddy`, `/var/lib/caddy`, certificates, logs and site data are preserved. Add
 `--dry-run` to preview. Purging configuration requires both `--purge` and `--yes`.
 
+### Diagnose
+
+```bash
+curl -fsSL https://caddy.tatalvpai.vip/diagnose.sh | sudo bash
+```
+
+The diagnosis script is read-only. It prints the distribution/architecture, package
+source, APT pin, keyring, loaded modules, Caddyfile validation, systemd state and recent
+logs. It does not modify files, services or configuration.
+
 ## Plugins
 
 | Module | Purpose |
@@ -203,6 +213,7 @@ pages/assets/caddy.svg             Caddy brand icon and browser favicon
 pages/assets/og.png                1200x630 Open Graph share card
 pages/install.sh                   User installer
 pages/uninstall.sh                 Safe uninstall/restore script
+pages/diagnose.sh                  Read-only support diagnosis
 pages/robots.txt                   Crawler policy
 pages/sitemap.xml                  Search-engine sitemap
 LICENSE / NOTICE                   Project license and trademark notice
