@@ -180,7 +180,7 @@ pages/assets/site.css              디자인 토큰과 컴포넌트 스타일
 pages/assets/site.js               테마, 탐색, 탭, 복사 상호작용
 pages/assets/theme.js              첫 렌더링 전 테마 초기화
 pages/assets/i18n.js               5개 언어 번역
-pages/assets/mascot.png            투명 마스코트(hero 및 플로팅 카드)
+pages/assets/mascot.png            투명 마스코트(hero 플로팅 요소 전용)
 pages/assets/caddy.svg             Caddy 브랜드 아이콘 및 favicon
 pages/assets/og.png                1200×630 Open Graph 공유 이미지
 pages/install.sh                   사용자 설치 스크립트

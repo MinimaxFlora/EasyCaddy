@@ -198,7 +198,7 @@ pages/assets/site.js               Theme, navigation, tabs and copy interactions
 pages/assets/theme.js              Pre-paint theme bootstrap
 pages/assets/field.js              Hero canvas crawler effect
 pages/assets/i18n.js               Five-language translations
-pages/assets/mascot.png            Transparent cartoon mascot used in the hero and floating card
+pages/assets/mascot.png            Transparent cartoon mascot used as the floating hero element
 pages/assets/caddy.svg             Caddy brand icon and browser favicon
 pages/assets/og.png                1200x630 Open Graph share card
 pages/install.sh                   User installer

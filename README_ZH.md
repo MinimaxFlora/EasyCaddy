@@ -179,7 +179,7 @@ pages/assets/site.css              页面设计变量与组件样式
 pages/assets/site.js               主题、导航、标签页与复制交互
 pages/assets/theme.js              首屏前的主题引导
 pages/assets/i18n.js               五语言翻译
-pages/assets/mascot.png            透明卡通形象（hero 与浮动卡片）
+pages/assets/mascot.png            透明卡通形象（仅 hero 浮动元素）
 pages/assets/caddy.svg             Caddy 品牌图标与 favicon
 pages/assets/og.png                1200×630 Open Graph 分享图
 pages/install.sh                   用户安装脚本
