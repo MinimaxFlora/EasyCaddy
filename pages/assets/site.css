@@ -17,11 +17,11 @@
   --accent-2: #7fa98b;
   --accent-soft: #e1ebe3;
   --on-accent: #f8f6f0;
-  --code: #171c18;
-  --code-ink: #e6e9e1;
-  --code-dim: #9aa79c;
-  --code-line: rgb(230 233 225 / 0.10);
-  --ok: #6da27c;
+  --code: #f2eee5;
+  --code-ink: #26231e;
+  --code-dim: #6f685c;
+  --code-line: rgb(32 30 26 / 0.12);
+  --ok: #3f7d50;
   --warn: #a9762f;
   --warn-soft: #f3e8d7;
   --rose: #a8656d;
@@ -530,7 +530,7 @@ main { overflow: clip; }
   gap: 10px;
   padding: 12px 14px;
   border-bottom: 1px solid var(--code-line);
-  background: rgb(255 255 255 / .025);
+  background: color-mix(in srgb, var(--code-ink) 5%, transparent);
 }
 .dots { display: flex; gap: 6px; }
 .dots i { width: 9px; height: 9px; border-radius: 50%; background: rgb(255 255 255 / .18); }
@@ -550,7 +550,7 @@ main { overflow: clip; }
   cursor: pointer;
   transition: color .2s, border-color .2s, background-color .2s;
 }
-.copy:hover { color: var(--code-ink); border-color: rgb(255 255 255 / .25); background: rgb(255 255 255 / .05); }
+.copy:hover { color: var(--code-ink); border-color: var(--code-line); background: color-mix(in srgb, var(--code-ink) 9%, transparent); }
 .copy.done { color: var(--ok); border-color: color-mix(in srgb, var(--ok) 50%, transparent); }
 .terminal pre {
   margin: 0;
@@ -565,7 +565,7 @@ main { overflow: clip; }
   overflow-wrap: anywhere;
 }
 .terminal code { font-family: inherit; white-space: inherit; }
-.prompt { color: var(--accent-2); }
+.prompt { color: var(--accent); }
 .dim { color: var(--code-dim); }
 .ok { color: var(--ok); }
 .term-foot {
@@ -744,9 +744,9 @@ h2 {
   top: 10px;
   right: 10px;
   margin: 0;
-  background: rgb(255 255 255 / .04);
+  background: color-mix(in srgb, var(--code-ink) 6%, transparent);
 }
-.code-block .copy:hover { background: rgb(255 255 255 / .09); }
+.code-block .copy:hover { background: color-mix(in srgb, var(--code-ink) 11%, transparent); }
 
 .callout {
   display: flex;

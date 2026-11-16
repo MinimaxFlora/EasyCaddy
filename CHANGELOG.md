@@ -16,7 +16,7 @@ the upstream Caddy release tag; entries are grouped by that version.
 - Added `robots.txt`, `sitemap.xml`, structured data, canonical/hreflang metadata, a generated 1200×630 Open Graph card and a single theme-color source.
 - Local Caddy wordmark assets (`assets/caddy-light.svg`, `assets/caddy-dark.svg`) used in every README header; the site favicon/brand icon uses `pages/assets/caddy.svg`.
 - Floating-card copy is localized (Chinese by default), removing the raw English `apt-cache policy` text.
-- Isometric canvas field (`pages/assets/field.js`) with traveling capsules, off-screen pause and reduced-motion fallback; the language button is now icon-only.
+- Canvas field (`pages/assets/field.js`) with drifting pastel capsules and dots, text-area avoidance, off-screen pause and reduced-motion fallback; the language button is now icon-only.
 - Debian Policy quality checks and lintian overrides in the packaging script.
 - Authoritative `config/plugins.lock.json`, `config/build-matrix.json` and `config/toolchain.json`; CI verifies modules, architecture lists and docs against them.
 - Independent `ci.yml` with ShellCheck, actionlint, yamllint, config/secret checks, an amd64 package build, module smoke test and a signed APT test using a temporary key.
@@ -34,6 +34,8 @@ the upstream Caddy release tag; entries are grouped by that version.
 - The installer verifies the key fingerprint, handles `.list` and Deb822 `.sources`, backs up changes and distinguishes package installation from service activation.
 - The packaging script verifies the upstream `.deb` SHA-512, asserts the upstream layout, records build/plugin provenance and generates accurate third-party notice text.
 - Release metadata, quality checks and maintenance instructions now reference configuration files rather than duplicated lists.
+- Light theme now uses light code/terminal surfaces instead of forcing a dark code block.
+- Footer and terminal no longer print the raw GPG fingerprint; the footer uses a copyright line.
 
 ## [2.11.9] - 2026-11-16
 
